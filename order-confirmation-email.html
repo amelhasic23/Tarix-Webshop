@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation - Tarix</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f4f4f4;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0a1f1a 0%, #1a4d3d 50%, #0a1f1a 100%);
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .greeting {
+            font-size: 24px;
+            color: #202020;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .message {
+            font-size: 16px;
+            color: #555555;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .order-details {
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .order-title {
+            font-size: 18px;
+            color: #202020;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #202020;
+            padding-bottom: 10px;
+        }
+
+        .order-info {
+            margin-bottom: 10px;
+        }
+
+        .order-label {
+            font-weight: bold;
+            color: #202020;
+            display: inline-block;
+            width: 140px;
+        }
+
+        .order-value {
+            color: #555555;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .items-table th {
+            background-color: #202020;
+            color: #ffffff;
+            padding: 12px;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .items-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+            color: #555555;
+            font-size: 14px;
+        }
+
+        .items-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .total-row {
+            background-color: #f9f9f9;
+            font-weight: bold;
+        }
+
+        .total-row td {
+            color: #202020;
+            font-size: 16px;
+        }
+
+        .shipping-info {
+            background-color: #f0f8ff;
+            border-left: 4px solid #202020;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+
+        .shipping-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #202020;
+            margin-bottom: 10px;
+        }
+
+        .shipping-address {
+            color: #555555;
+            line-height: 1.6;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background-color: #202020;
+            color: #ffffff;
+            padding: 15px 40px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .cta-button:hover {
+            background-color: #333333;
+        }
+
+        .button-container {
+            text-align: center;
+        }
+
+        .footer {
+            background-color: #f9f9f9;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .footer-text {
+            color: #888888;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .social-links {
+            margin: 20px 0;
+        }
+
+        .social-links a {
+            color: #202020;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 14px;
+        }
+
+        .copyright {
+            color: #aaaaaa;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .header {
+                padding: 20px 10px;
+            }
+
+            .content {
+                padding: 20px 15px;
+            }
+
+            .order-details {
+                padding: 15px;
+            }
+
+            .items-table th,
+            .items-table td {
+                padding: 8px;
+                font-size: 12px;
+            }
+
+            .order-label {
+                width: 100px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <div class="greeting">Thank You for Your Order!</div>
+
+            <div class="message">
+                Hi <strong>[Customer Name]</strong>,<br><br>
+                We're excited to confirm that we've received your order. Your items are being prepared and will be shipped soon. Here are the details of your purchase:
+            </div>
+
+            <!-- Order Details -->
+            <div class="order-details">
+                <div class="order-title">Order Details</div>
+
+                <div class="order-info">
+                    <span class="order-label">Order Number:</span>
+                    <span class="order-value">#[ORDER_NUMBER]</span>
+                </div>
+
+                <div class="order-info">
+                    <span class="order-label">Order Date:</span>
+                    <span class="order-value">[ORDER_DATE]</span>
+                </div>
+
+                <div class="order-info">
+                    <span class="order-label">Payment Method:</span>
+                    <span class="order-value">[PAYMENT_METHOD]</span>
+                </div>
+
+                <!-- Items Table -->
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>[PRODUCT_NAME_1]</td>
+                            <td>[QTY_1]</td>
+                            <td>$[PRICE_1]</td>
+                            <td>$[TOTAL_1]</td>
+                        </tr>
+                        <tr>
+                            <td>[PRODUCT_NAME_2]</td>
+                            <td>[QTY_2]</td>
+                            <td>$[PRICE_2]</td>
+                            <td>$[TOTAL_2]</td>
+                        </tr>
+                        <!-- Add more items as needed -->
+                        <tr>
+                            <td colspan="3" style="text-align: right; font-weight: bold;">Subtotal:</td>
+                            <td>$[SUBTOTAL]</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="text-align: right; font-weight: bold;">Shipping:</td>
+                            <td>$[SHIPPING]</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="text-align: right; font-weight: bold;">Tax:</td>
+                            <td>$[TAX]</td>
+                        </tr>
+                        <tr class="total-row">
+                            <td colspan="3" style="text-align: right;">TOTAL:</td>
+                            <td>$[TOTAL_AMOUNT]</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Shipping Information -->
+            <div class="shipping-info">
+                <div class="shipping-title">Shipping Address</div>
+                <div class="shipping-address">
+                    [CUSTOMER_NAME]<br>
+                    [STREET_ADDRESS]<br>
+                    [CITY], [STATE] [ZIP_CODE]<br>
+                    [COUNTRY]<br>
+                    Phone: [PHONE_NUMBER]
+                </div>
+            </div>
+
+            <div class="message">
+                Your order will be shipped within 2-3 business days. You will receive a shipping confirmation email with tracking information once your order has been dispatched.
+            </div>
+
+            <!-- Call to Action Button -->
+            <div class="button-container">
+                <a href="[TRACK_ORDER_URL]" class="cta-button">Track Your Order</a>
+            </div>
+
+            <div class="message">
+                If you have any questions about your order, please don't hesitate to contact our customer support team. We're here to help!
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-text">
+                <strong>Need Help?</strong><br>
+                Contact us at <a href="mailto:support@tarix.com" style="color: #202020;">support@tarix.com</a><br>
+                or call us at [PHONE_NUMBER]
+            </div>
+
+            <div class="social-links">
+                <a href="[FACEBOOK_URL]">Facebook</a> |
+                <a href="[TWITTER_URL]">Twitter</a> |
+                <a href="[INSTAGRAM_URL]">Instagram</a>
+            </div>
+
+            <div class="footer-text">
+                Thank you for shopping with Tarix!<br>
+                We appreciate your business.
+            </div>
+
+            <div class="copyright">
+                &copy; 2026 Tarix. All rights reserved.<br>
+                [COMPANY_ADDRESS]
+            </div>
+        </div>
+    </div>
+</body>
+</html>

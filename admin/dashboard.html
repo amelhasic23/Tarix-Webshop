@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Tarix WebShop</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>Tarix Admin</h2>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="#" class="menu-item active" data-section="dashboard">
+                <ion-icon name="grid-outline"></ion-icon>
+                <span data-translate="dashboard">Dashboard</span>
+            </a>
+            <a href="#" class="menu-item" data-section="banners">
+                <ion-icon name="images-outline"></ion-icon>
+                <span data-translate="banners">Banners</span>
+            </a>
+            <a href="#" class="menu-item" data-section="categories">
+                <ion-icon name="folder-outline"></ion-icon>
+                <span data-translate="categories">Categories</span>
+            </a>
+            <a href="#" class="menu-item" data-section="products">
+                <ion-icon name="cube-outline"></ion-icon>
+                <span data-translate="products">Products</span>
+            </a>
+            <a href="#" class="menu-item" data-section="testimonials">
+                <ion-icon name="chatbubbles-outline"></ion-icon>
+                <span data-translate="testimonials">Testimonials</span>
+            </a>
+            <a href="#" class="menu-item" data-section="cta">
+                <ion-icon name="megaphone-outline"></ion-icon>
+                <span data-translate="ctaContent">CTA Content</span>
+            </a>
+            <a href="#" class="menu-item" data-section="newsletter">
+                <ion-icon name="mail-outline"></ion-icon>
+                <span data-translate="newsletter">Newsletter</span>
+            </a>
+            <a href="#" class="menu-item" data-section="orders">
+                <ion-icon name="receipt-outline"></ion-icon>
+                <span data-translate="orders">Orders</span>
+            </a>
+            <a href="#" class="menu-item logout-btn">
+                <ion-icon name="log-out-outline"></ion-icon>
+                <span data-translate="logout">Logout</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <h1 id="pageTitle">Dashboard</h1>
+            <div class="header-right">
+                <select id="languageSelector" class="language-selector">
+                    <option value="en">English</option>
+                    <option value="de">Deutsch</option>
+                    <option value="bs">Bosanski</option>
+                </select>
+                <span id="adminUsername" class="username"></span>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="content-area" id="contentArea">
+            <!-- Dashboard Section -->
+            <section id="dashboard-section" class="section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <ion-icon name="cube-outline"></ion-icon>
+                        <div class="stat-info">
+                            <h3 id="totalProducts">0</h3>
+                            <p data-translate="totalProducts">Total Products</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <ion-icon name="receipt-outline"></ion-icon>
+                        <div class="stat-info">
+                            <h3 id="totalOrders">0</h3>
+                            <p data-translate="totalOrders">Total Orders</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <ion-icon name="mail-outline"></ion-icon>
+                        <div class="stat-info">
+                            <h3 id="totalSubscribers">0</h3>
+                            <p data-translate="newsletterSubscribers">Newsletter Subscribers</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <ion-icon name="folder-outline"></ion-icon>
+                        <div class="stat-info">
+                            <h3 id="totalCategories">0</h3>
+                            <p data-translate="categories">Categories</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-orders">
+                    <h2 data-translate="recentOrders">Recent Orders</h2>
+                    <div id="recentOrdersList"></div>
+                </div>
+            </section>
+
+            <!-- Banners Section -->
+            <section id="banners-section" class="section">
+                <button class="btn-primary" id="addBannerBtn">
+                    <ion-icon name="add-outline"></ion-icon> Add New Banner
+                </button>
+                <div id="bannersListContainer" class="items-grid"></div>
+            </section>
+
+            <!-- Categories Section -->
+            <section id="categories-section" class="section">
+                <button class="btn-primary" id="addCategoryBtn">
+                    <ion-icon name="add-outline"></ion-icon> Add New Category
+                </button>
+                <div id="categoriesListContainer" class="items-grid"></div>
+            </section>
+
+            <!-- Products Section -->
+            <section id="products-section" class="section">
+                <button class="btn-primary" id="addProductBtn">
+                    <ion-icon name="add-outline"></ion-icon> Add New Product
+                </button>
+                <div id="productsListContainer" class="items-grid"></div>
+            </section>
+
+            <!-- Testimonials Section -->
+            <section id="testimonials-section" class="section">
+                <button class="btn-primary" id="addTestimonialBtn">
+                    <ion-icon name="add-outline"></ion-icon> Add New Testimonial
+                </button>
+                <div id="testimonialsListContainer" class="items-grid"></div>
+            </section>
+
+            <!-- CTA Section -->
+            <section id="cta-section" class="section">
+                <div id="ctaFormContainer"></div>
+            </section>
+
+            <!-- Newsletter Section -->
+            <section id="newsletter-section" class="section">
+                <div id="newsletterListContainer"></div>
+            </section>
+
+            <!-- Orders Section -->
+            <section id="orders-section" class="section">
+                <div class="orders-filter">
+                    <select id="orderStatusFilter">
+                        <option value="">All Orders</option>
+                        <option value="pending">Pending</option>
+                        <option value="processing">Processing</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div id="ordersListContainer"></div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal for Forms -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">&times;</button>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notification" class="notification"></div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

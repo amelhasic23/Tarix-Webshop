@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Translation Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; background: #f0f0f0; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        select { padding: 10px; font-size: 16px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Localization Test Page</h1>
+
+    <label for="langTest">Select Language:</label>
+    <select name="language" id="langTest">
+        <option value="en">English</option>
+        <option value="de">Deutsch</option>
+        <option value="bs">Bosanski</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+        <option value="it">Italiano</option>
+        <option value="pt">Português</option>
+        <option value="sl">Slovenščina</option>
+        <option value="no">Norsk</option>
+        <option value="sv">Svenska</option>
+        <option value="da">Dansk</option>
+    </select>
+
+    <div class="test-section">
+        <h2>Test Elements</h2>
+        <p><strong data-translate="home">Home</strong></p>
+        <p><strong data-translate="categories">Categories</strong></p>
+        <p><strong data-translate="mensFashion">Men's Fashion</strong></p>
+        <p><strong data-translate="newProducts">New Products</strong></p>
+        <p><strong data-translate="cart">Cart</strong></p>
+        <p><strong data-translate="addToCart">Add to Cart</strong></p>
+        <p><strong data-translate="bestSellers">Best Sellers</strong></p>
+        <p><strong data-translate="topRated">Top Rated</strong></p>
+        <p><strong data-translate="freeShipping">Free Shipping</strong></p>
+        <input type="text" placeholder="Search..." data-translate-placeholder="searchProducts" style="padding: 10px; width: 300px;">
+    </div>
+
+    <div class="test-section">
+        <h2>Console Output</h2>
+        <div id="console"></div>
+    </div>
+
+    <script src="index.js"></script>
+    <script>
+        // Additional logging
+        const consoleDiv = document.getElementById('console');
+        const log = (msg, isError = false) => {
+            const p = document.createElement('p');
+            p.className = isError ? 'error' : 'success';
+            p.textContent = msg;
+            consoleDiv.appendChild(p);
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            log('✓ Page loaded');
+
+            // Check if translations object exists
+            if (typeof translations !== 'undefined') {
+                log('✓ Translations object found');
+                log(`✓ Languages available: ${Object.keys(translations).join(', ')}`);
+
+                // Count translation keys for each language
+                Object.keys(translations).forEach(lang => {
+                    const keyCount = Object.keys(translations[lang]).length;
+                    log(`✓ ${lang.toUpperCase()}: ${keyCount} translation keys`);
+                });
+            } else {
+                log('✗ Translations object not found!', true);
+            }
+
+            // Check if translatePage function exists
+            if (typeof translatePage === 'function') {
+                log('✓ translatePage function found');
+            } else {
+                log('✗ translatePage function not found!', true);
+            }
+
+            // Count elements with data-translate
+            const translateElements = document.querySelectorAll('[data-translate]').length;
+            log(`✓ Found ${translateElements} elements with data-translate`);
+
+            const placeholderElements = document.querySelectorAll('[data-translate-placeholder]').length;
+            log(`✓ Found ${placeholderElements} elements with data-translate-placeholder`);
+        });
+    </script>
+</body>
+</html>

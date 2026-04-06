@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Tarix Store</title>
+    <link rel="stylesheet" href="index.css">
+    <style>
+        body { background: var(--cultured); min-height: 100vh; }
+        .checkout-header { background: var(--white); padding: 20px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .checkout-header .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+        .checkout-header a { color: var(--salmon-pink); text-decoration: none; font-weight: 600; }
+        .checkout-container { max-width: 1200px; margin: 40px auto; padding: 20px; }
+        .checkout-grid { display: grid; grid-template-columns: 1fr 400px; gap: 40px; }
+        .checkout-section { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .checkout-section h2 { margin-bottom: 20px; color: var(--onyx); }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--sonic-silver); }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid var(--cultured); border-radius: 8px; font-size: 15px; box-sizing: border-box; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--salmon-pink); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .order-summary { position: sticky; top: 20px; }
+        .order-item { display: flex; gap: 15px; padding: 15px; background: var(--cultured); border-radius: 8px; margin-bottom: 15px; }
+        .order-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 5px; }
+        .order-item-details { flex: 1; }
+        .order-item-title { font-weight: 600; font-size: 14px; margin-bottom: 5px; }
+        .order-item-price { color: var(--salmon-pink); font-weight: 600; }
+        .order-total { border-top: 2px solid var(--cultured); padding-top: 20px; margin-top: 20px; }
+        .total-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .total-row.final { font-size: 20px; font-weight: 700; color: var(--onyx); padding-top: 10px; border-top: 1px solid var(--cultured); }
+        .btn-place-order { width: 100%; padding: 18px; background: var(--salmon-pink); color: white; border: none; border-radius: 10px; font-size: 18px; font-weight: 600; cursor: pointer; margin-top: 20px; transition: all 0.3s; }
+        .btn-place-order:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255, 71, 87, 0.3); }
+        .empty-cart { text-align: center; padding: 60px 20px; }
+        .empty-cart h2 { color: var(--sonic-silver); margin-bottom: 20px; }
+        .btn-continue-shopping { display: inline-block; padding: 15px 40px; background: var(--salmon-pink); color: white; text-decoration: none; border-radius: 10px; font-weight: 600; }
+        @media (max-width: 968px) { .checkout-grid { grid-template-columns: 1fr; } .order-summary { position: static; } }
+    </style>
+</head>
+<body>
+    <div class="checkout-header">
+        <div class="container">
+            <h2 style="margin: 0; color: var(--onyx);">Tarix Store</h2>
+            <a href="index.html">← Back to Shop</a>
+        </div>
+    </div>
+
+    <div class="checkout-container">
+        <h1 style="margin-bottom: 30px;" data-translate="checkout">Checkout</h1>
+
+        <div id="checkoutContent"></div>
+    </div>
+
+    <script src="index.js"></script>
+    <script>
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const checkoutContent = document.getElementById('checkoutContent');
+
+        console.log('Cart data:', cart);
+
+        if (cart.length === 0) {
+            checkoutContent.innerHTML = `
+                <div class="empty-cart checkout-section">
+                    <h2 data-translate="cartEmpty">Your cart is empty</h2>
+                    <p style="color: var(--sonic-silver); margin-bottom: 30px;">Add some items to your cart to checkout</p>
+                    <a href="index.html" class="btn-continue-shopping" data-translate="shopNow">Continue Shopping</a>
+                </div>
+            `;
+        } else {
+            let subtotal = 0;
+            cart.forEach(item => {
+                try {
+                    // Convert USD to BAM (1 USD = 1.80 BAM)
+                    const priceStr = String(item.price || '0');
+                    const priceUSD = parseFloat(priceStr.replace('$', '').replace('BAM', '').replace('KM', '').trim()) || 0;
+                    const priceBAM = priceUSD * 1.80;
+                    subtotal += priceBAM * (item.quantity || 1);
+                    console.log('Item:', item.title, 'Price USD:', priceUSD, 'Price BAM:', priceBAM);
+                } catch (e) {
+                    console.error('Error processing item:', item, e);
+                }
+            });
+
+            const shipping = subtotal > 100 ? 0 : 18; // Free shipping over 100 BAM, otherwise 18 BAM
+            const tax = subtotal * 0.17; // 17% PDV (VAT) in Bosnia
+            const total = subtotal + shipping + tax;
+
+            checkoutContent.innerHTML = `
+                <div class="checkout-grid">
+                    <div class="checkout-section">
+                        <h2 data-translate="billingDetails">Billing Details</h2>
+                        <form id="checkoutForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label data-translate="firstName">First Name</label>
+                                    <input type="text" required>
+                                </div>
+                                <div class="form-group">
+                                    <label data-translate="lastName">Last Name</label>
+                                    <input type="text" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label data-translate="emailAddress">Email Address</label>
+                                <input type="email" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label data-translate="phone">Phone Number</label>
+                                <input type="tel" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label data-translate="address">Street Address</label>
+                                <input type="text" required>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label data-translate="city">City</label>
+                                    <input type="text" required>
+                                </div>
+                                <div class="form-group">
+                                    <label data-translate="zipCode">ZIP Code</label>
+                                    <input type="text" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label data-translate="country">Country</label>
+                                <select required>
+                                    <option value="BA" selected>Bosnia and Herzegovina</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label data-translate="paymentMethod">Payment Method</label>
+                                <select disabled style="background-color: #f5f5f5;">
+                                    <option value="cod" selected>Cash on Delivery</option>
+                                </select>
+                                <p style="color: var(--sonic-silver); font-size: 14px; margin-top: 8px;">Payment will be collected upon delivery</p>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="order-summary">
+                        <div class="checkout-section">
+                            <h2 data-translate="orderSummary">Order Summary</h2>
+
+                            <div class="order-items">
+                                ${cart.map(item => {
+                                    const priceUSD = parseFloat(item.price.replace('$', '').replace('BAM', '').trim());
+                                    const priceBAM = priceUSD * 1.80;
+                                    return `
+                                    <div class="order-item">
+                                        <img src="${item.image}" alt="${item.title}">
+                                        <div class="order-item-details">
+                                            <div class="order-item-title">${item.title}</div>
+                                            <div class="order-item-price">${priceBAM.toFixed(2)} BAM x ${item.quantity}</div>
+                                        </div>
+                                    </div>
+                                `;}).join('')}
+                            </div>
+
+                            <div class="order-total">
+                                <div class="total-row">
+                                    <span data-translate="subtotal">Subtotal</span>
+                                    <strong>${subtotal.toFixed(2)} BAM</strong>
+                                </div>
+                                <div class="total-row">
+                                    <span data-translate="shipping">Shipping</span>
+                                    <strong>${shipping === 0 ? '<span style="color: var(--ocean-green);">FREE</span>' : shipping.toFixed(2) + ' BAM'}</strong>
+                                </div>
+                                <div class="total-row">
+                                    <span data-translate="tax">Tax (17%)</span>
+                                    <strong>${tax.toFixed(2)} BAM</strong>
+                                </div>
+                                <div class="total-row final">
+                                    <span data-translate="total">Total</span>
+                                    <span>${total.toFixed(2)} BAM</span>
+                                </div>
+                            </div>
+
+                            <button type="submit" form="checkoutForm" class="btn-place-order" data-translate="placeOrder">Place Order</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Handle form submission
+            document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Show success message
+                checkoutContent.innerHTML = `
+                    <div class="empty-cart checkout-section">
+                        <ion-icon name="checkmark-circle" style="font-size: 80px; color: var(--ocean-green);"></ion-icon>
+                        <h2 style="color: var(--ocean-green); margin: 20px 0;">Order Placed Successfully!</h2>
+                        <p style="color: var(--sonic-silver); margin-bottom: 10px;">Order ID: #${Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
+                        <p style="color: var(--sonic-silver); margin-bottom: 30px;">Thank you for your purchase! You will receive an email confirmation shortly.</p>
+                        <a href="index.html" class="btn-continue-shopping">Continue Shopping</a>
+                    </div>
+                `;
+
+                // Clear cart
+                localStorage.removeItem('cart');
+            });
+
+            // Translate page
+            if (typeof translatePage === 'function') {
+                setTimeout(() => translatePage(currentLanguage), 100);
+            }
+        }
+    </script>
+
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+</body>
+</html>

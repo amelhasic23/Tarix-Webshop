@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="index.css">
+
+    <!-- DNS Prefetch for external domains -->
+    <link rel="dns-prefetch" href="https://unpkg.com">
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <title>Login - Tarix</title>
+    <meta name="description" content="Login or register for your Tarix account">
+    <link rel="icon" href="./assets/images/payment.png" type="image/png">
+</head>
+<body>
+
+    <header>
+        <div class="header-top">
+            <div class="container">
+                <ul class="header-social-container">
+                    <li>
+                      <a href="#" class="social-link" aria-label="Facebook">
+                        <ion-icon name="logo-facebook"></ion-icon>
+                      </a>
+                    </li>
+                    <li>
+                       <a href="#" class="social-link" aria-label="Twitter">
+                        <ion-icon name="logo-twitter"></ion-icon>
+                      </a>
+                    </li>
+                    <li>
+                       <a href="#" class="social-link" aria-label="Instagram">
+                        <ion-icon name="logo-instagram"></ion-icon>
+                      </a>
+                    </li>
+                    <li>
+                       <a href="#" class="social-link" aria-label="LinkedIn">
+                        <ion-icon name="logo-linkedin"></ion-icon>
+                      </a>
+                    </li>
+                </ul>
+
+                <div class="header-alert-news">
+                  <p>
+                    <b data-translate="freeShipping">Free Shipping</b>
+                    <span data-translate="freeShippingDesc">This week on orders over 100 BAM.</span>
+                  </p>
+                </div>
+
+                <div class="header-top-actions">
+                  <span class="currency-badge">BAM</span>
+
+                  <select name="language" aria-label="Select language">
+                    <option value="en">English</option>
+                    <option value="de">Deutsch</option>
+                    <option value="bs">Bosanski</option>
+                  </select>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="header-main">
+      <div class="container">
+        <a href="index.html" class="header-logo">
+          <img src="./Images/WhatsApp%20Image%202026-03-27%20at%2014.20.47%20%281%29.jpeg" alt="Tarix logo" width="300" height="90" fetchpriority="high" decoding="async">
+        </a>
+
+        <div class="header-search-container">
+            <input type="search" name="search" class="search-field" placeholder="Search products..." data-translate-placeholder="searchProducts">
+            <button class="search-btn" aria-label="Search">
+                <ion-icon name="search-outline"></ion-icon>
+            </button>
+        </div>
+
+        <div class="header-user-actions">
+            <button class="action-btn" data-user-icon aria-label="User account">
+                <ion-icon name="person-outline"></ion-icon>
+            </button>
+
+            <button class="action-btn" data-favorites-open aria-label="Favorites">
+                <ion-icon name="heart-outline"></ion-icon>
+                <span class="count" aria-hidden="true">0</span>
+            </button>
+
+            <button class="action-btn" data-cart-open aria-label="Shopping cart">
+                <ion-icon name="bag-handle-outline"></ion-icon>
+                <span class="count" aria-hidden="true">0</span>
+            </button>
+        </div>
+
+        <div class="user-dropdown" id="userDropdown"></div>
+      </div>
+    </div>
+
+    <main>
+        <div class="login-container">
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">
+                    <span data-translate="login">Login</span>
+                </button>
+                <button class="auth-tab" data-tab="register">
+                    <span data-translate="register">Register</span>
+                </button>
+            </div>
+
+            <!-- Login Form -->
+            <form class="auth-form active" id="loginForm" data-form="login">
+                <h2 class="form-title" data-translate="welcomeBack">Welcome Back</h2>
+
+                <div class="form-group">
+                    <label for="loginEmail" data-translate="email">Email</label>
+                    <input type="email" id="loginEmail" name="email" required data-translate-placeholder="email" placeholder="Email">
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword" data-translate="password">Password</label>
+                    <input type="password" id="loginPassword" name="password" required data-translate-placeholder="password" placeholder="Password">
+                </div>
+
+                <button type="submit" class="submit-btn" data-translate="signIn">Sign In</button>
+            </form>
+
+            <!-- Register Form -->
+            <form class="auth-form" id="registerForm" data-form="register">
+                <h2 class="form-title" data-translate="createAccount">Create Account</h2>
+
+                <div class="form-group">
+                    <label for="registerName" data-translate="nameAndSurname">Name and Surname</label>
+                    <input type="text" id="registerName" name="nameAndSurname" required data-translate-placeholder="nameAndSurname" placeholder="Name and Surname">
+                </div>
+
+                <div class="form-group">
+                    <label for="registerEmail" data-translate="email">Email</label>
+                    <input type="email" id="registerEmail" name="email" required data-translate-placeholder="email" placeholder="Email">
+                </div>
+
+                <div class="form-group">
+                    <label for="registerPassword" data-translate="password">Password</label>
+                    <input type="password" id="registerPassword" name="password" required data-translate-placeholder="password" placeholder="Password">
+                </div>
+
+                <div class="form-group">
+                    <label for="typeOfPerson" data-translate="typeOfPerson">Type of Person</label>
+                    <select id="typeOfPerson" name="typeOfPerson" required>
+                        <option value="" disabled selected data-translate="typeOfPerson">Type of Person</option>
+                        <option value="individual" data-translate="individual">Fizičko Lice</option>
+                        <option value="company" data-translate="company">Firma</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="submit-btn" data-translate="signUp">Sign Up</button>
+            </form>
+        </div>
+    </main>
+
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <script src="index.js"></script>
+    <script>
+        // Tab Switching
+        document.querySelectorAll('.auth-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const targetForm = this.dataset.tab;
+
+                // Update tabs
+                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                // Update forms
+                document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+                document.querySelector(`[data-form="${targetForm}"]`).classList.add('active');
+            });
+        });
+
+        // Login Form Handler
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (await loginUser(email, password)) {
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            }
+        });
+
+        // Register Form Handler
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const userData = {
+                nameAndSurname: document.getElementById('registerName').value,
+                email: document.getElementById('registerEmail').value,
+                password: document.getElementById('registerPassword').value,
+                typeOfPerson: document.getElementById('typeOfPerson').value
+            };
+
+            if (await registerUser(userData)) {
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>
