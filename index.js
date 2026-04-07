@@ -14,9 +14,10 @@ function sanitizeHTML(str) {
 function sanitizeURL(url) {
     if (!url) return '';
     const str = String(url);
-    // Only allow http, https, and relative paths (NOT data: URLs for security)
+    // Allow http, https, relative paths, and safe data URLs for images
     if (str.startsWith('http://') || str.startsWith('https://') ||
-        str.startsWith('./') || str.startsWith('/')) {
+        str.startsWith('./') || str.startsWith('/') ||
+        str.startsWith('data:image/')) {
         return str;
     }
     return '';
@@ -1160,6 +1161,30 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ========================================
+// BACK TO TOP BUTTON
+// ========================================
+document.addEventListener('DOMContentLoaded', function() {
+    const backToTopBtn = document.getElementById('backToTopBtn');
+
+    if (backToTopBtn) {
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                backToTopBtn.classList.add('visible');
+            } else {
+                backToTopBtn.classList.remove('visible');
+            }
+        }, { passive: true });
+
+        backToTopBtn.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    }
+});
+
+// ========================================
 // CART & FAVORITES FUNCTIONALITY
 // ========================================
 let cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -1849,7 +1874,14 @@ function validateCheckoutField(input) {
 // Email sending function (using EmailJS)
 async function sendOrderEmail(orderData) {
     try {
+        // Check if EmailJS is loaded
+        if (typeof emailjs === 'undefined') {
+            console.error('EmailJS is not loaded. Please check the script tag in index.html');
+            return Promise.reject(new Error('EmailJS not loaded'));
+        }
+
         console.log('Sending order confirmation email...');
+        console.log('To:', orderData.customer.email);
 
         // Prepare email template parameters
         const templateParams = {
@@ -1868,6 +1900,8 @@ async function sendOrderEmail(orderData) {
             total: orderData.total + ' BAM'
         };
 
+        console.log('Email parameters:', templateParams);
+
         // Send email using EmailJS
         const response = await emailjs.send(
             'service_7ebbrkb',      // Service ID
@@ -1879,6 +1913,11 @@ async function sendOrderEmail(orderData) {
         return Promise.resolve(response);
     } catch (error) {
         console.error('Error sending order confirmation email:', error);
+        console.error('Error details:', {
+            message: error.message || error.text || 'Unknown error',
+            status: error.status,
+            text: error.text
+        });
         // Don't throw error to prevent order from failing
         return Promise.reject(error);
     }
@@ -2038,6 +2077,58 @@ if (newsletterForm) {
         closeModal();
     });
 }
+
+// ========================================
+// INLINE NEWSLETTER FORM HANDLER
+// ========================================
+document.addEventListener('DOMContentLoaded', function() {
+    const inlineNewsletterForm = document.querySelector('.newsletter-section .newsletter-form');
+    const inlineNewsletterInput = document.querySelector('.newsletter-section .newsletter-input');
+
+    if (inlineNewsletterForm && inlineNewsletterInput) {
+        console.log('[Main] Inline newsletter form found, attaching handler');
+
+        inlineNewsletterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('[Main] Newsletter form submitted');
+
+            const email = inlineNewsletterInput.value.trim();
+
+            if (!email) {
+                showNotification(translations[currentLanguage]?.enterEmail || 'Please enter your email address', 'error');
+                return;
+            }
+
+            if (!validateEmail(email)) {
+                showNotification(translations[currentLanguage]?.invalidEmail || 'Please enter a valid email address', 'error');
+                return;
+            }
+
+            // Check for duplicates
+            const subscribers = JSON.parse(localStorage.getItem('tarix_newsletter') || '[]');
+            if (subscribers.some(s => s.email.toLowerCase() === email.toLowerCase())) {
+                showNotification(translations[currentLanguage]?.alreadySubscribed || 'This email is already subscribed', 'error');
+                return;
+            }
+
+            // Save new subscriber
+            subscribers.push({
+                id: Date.now(),
+                email: email,
+                subscribed_at: new Date().toISOString(),
+                discount_given: false,
+                discount_amount: 0
+            });
+            localStorage.setItem('tarix_newsletter', JSON.stringify(subscribers));
+            console.log('[Main] Newsletter subscriber saved:', email);
+
+            inlineNewsletterInput.value = '';
+            showNotification(translations[currentLanguage]?.subscribeSuccess || 'Successfully subscribed! Check your email for 15% discount code.', 'success');
+        });
+    } else {
+        console.log('[Main] Inline newsletter form not found');
+    }
+});
 
 const notificationToast = document.querySelector("[data-toast]");
 const toastCloseBtn = document.querySelector("[data-toast-close]");
@@ -2292,11 +2383,20 @@ function renderUserDropdown() {
 
 // Load categories from localStorage (set by admin panel)
 function loadCategoriesFromStorage() {
+    console.log('[Main] loadCategoriesFromStorage called');
     const container = document.querySelector('.category-dropdown-content');
-    if (!container) return;
+    if (!container) {
+        console.log('[Main] ERROR: .category-dropdown-content not found!');
+        return;
+    }
 
     const categories = JSON.parse(localStorage.getItem('tarix_categories')) || [];
-    if (categories.length === 0) return; // Keep static HTML if no data in localStorage
+    console.log('[Main] Categories in localStorage:', categories.length);
+    if (categories.length === 0) {
+        console.log('[Main] No categories in localStorage, keeping static HTML');
+        return;
+    }
+    console.log('[Main] Loading', categories.length, 'categories from admin data');
 
     container.innerHTML = categories.map(cat => {
         const safeName = sanitizeHTML(cat.name || '');
@@ -2322,22 +2422,40 @@ function loadCategoriesFromStorage() {
 
 // Load testimonials from localStorage (set by admin panel)
 function loadTestimonialsFromStorage() {
-    const card = document.querySelector('.testimonial-card');
-    if (!card) return;
+    console.log('[Main] loadTestimonialsFromStorage called');
+    const container = document.querySelector('.testimonial');
+    if (!container) {
+        console.log('[Main] ERROR: .testimonial container not found!');
+        return;
+    }
 
     const testimonials = JSON.parse(localStorage.getItem('tarix_testimonials')) || [];
-    const activeTestimonial = testimonials.find(t => t.active);
-    if (!activeTestimonial) return; // Keep static HTML if no active testimonial
+    const activeTestimonials = testimonials.filter(t => t.active);
+    console.log('[Main] Active testimonials:', activeTestimonials.length);
 
-    const bannerImg = card.querySelector('.testimonial-banner');
-    const nameEl = card.querySelector('.testimonial-name');
-    const titleEl = card.querySelector('.testimonial-title');
-    const descEl = card.querySelector('.testimonial-desc');
+    if (activeTestimonials.length === 0) {
+        console.log('[Main] No active testimonials, keeping static HTML');
+        return;
+    }
 
-    if (bannerImg && activeTestimonial.image_path) bannerImg.src = sanitizeURL(activeTestimonial.image_path);
-    if (nameEl) nameEl.textContent = activeTestimonial.customer_name || 'Customer';
-    if (titleEl) titleEl.textContent = activeTestimonial.customer_role || 'Customer';
-    if (descEl) descEl.textContent = activeTestimonial.text || '';
+    // Preserve the title
+    const title = container.querySelector('.title');
+    const titleHTML = title ? title.outerHTML : '<h2 class="title" data-translate="testimonials">Testimonials</h2>';
+
+    // Generate cards for ALL active testimonials
+    const cardsHTML = activeTestimonials.map(t => `
+        <div class="testimonial-card">
+            <img src="${sanitizeURL(t.image_path || './assets/images/testimonial-1.jpg')}"
+                 alt="${sanitizeHTML(t.customer_name || 'Customer')}" class="testimonial-banner">
+            <p class="testimonial-name">${sanitizeHTML(t.customer_name || 'Customer')}</p>
+            <p class="testimonial-title">${sanitizeHTML(t.customer_role || '')}</p>
+            <img src="./assets/images/icons/quotes.svg" alt="quotation" class="quotation-img">
+            <p class="testimonial-desc">${sanitizeHTML(t.text || '')}</p>
+        </div>
+    `).join('');
+
+    container.innerHTML = titleHTML + '<div class="testimonial-cards-wrapper">' + cardsHTML + '</div>';
+    console.log('[Main] Loaded', activeTestimonials.length, 'testimonial cards');
 }
 
 // Load CTA content from localStorage (set by admin panel)
@@ -2359,6 +2477,230 @@ function loadCTAFromStorage() {
     if (titleEl && cta.heading) titleEl.textContent = cta.heading;
     if (textEl && cta.text) textEl.textContent = cta.text;
     if (btnEl && cta.button_text) btnEl.textContent = cta.button_text;
+}
+
+// ========================================
+// LOAD PRODUCTS FROM ADMIN (localStorage)
+// ========================================
+function loadProductsFromStorage() {
+    console.log('[Main] loadProductsFromStorage called');
+    const products = JSON.parse(localStorage.getItem('tarix_products')) || [];
+    console.log('[Main] Products in localStorage:', products.length);
+    if (products.length === 0) {
+        console.log('[Main] No products in localStorage, keeping static HTML');
+        return;
+    }
+
+    const categories = JSON.parse(localStorage.getItem('tarix_categories')) || [];
+    const productGrid = document.querySelector('.product-grid');
+    if (!productGrid) {
+        console.log('[Main] ERROR: .product-grid not found!');
+        return;
+    }
+    console.log('[Main] Loading', products.length, 'products from admin data');
+
+    // Generate product HTML from localStorage data
+    productGrid.innerHTML = products.map(product => {
+        const category = categories.find(c => c.id === product.category_id);
+        const categoryName = category ? sanitizeHTML(category.name) : 'Uncategorized';
+        const categoryFilter = categoryName.toLowerCase().replace(/[^a-z0-9-]/g, '');
+        const safeName = sanitizeHTML(product.name || '');
+        const safeImage = sanitizeURL(product.image_path || './assets/images/products/1.jpg');
+        const price = parseFloat(product.price) || 0;
+        const oldPrice = parseFloat(product.old_price) || 0;
+        const discount = product.discount_percentage || 0;
+
+        return `
+            <div class="showcase" data-category="${categoryFilter}">
+                <div class="showcase-banner">
+                    <img src="${safeImage}" alt="${safeName}" width="300" class="product-img default" loading="lazy" decoding="async">
+                    ${discount > 0 ? `<p class="showcase-badge">${discount}%</p>` : ''}
+                    ${product.best_seller ? '<p class="showcase-badge angle pink">Best</p>' : ''}
+                    <div class="showcase-actions">
+                        <button class="btn-action" aria-label="Add to favorites" data-action="add-favorite">
+                            <ion-icon name="heart-outline"></ion-icon>
+                        </button>
+                        <button class="btn-action" aria-label="Quick view" data-action="quick-view">
+                            <ion-icon name="eye-outline"></ion-icon>
+                        </button>
+                        <button class="btn-action" aria-label="Compare" data-action="compare">
+                            <ion-icon name="repeat-outline"></ion-icon>
+                        </button>
+                        <button class="btn-action" aria-label="Add to cart" data-action="add-cart">
+                            <ion-icon name="bag-add-outline"></ion-icon>
+                        </button>
+                    </div>
+                </div>
+                <div class="showcase-content">
+                    <a href="#" class="showcase-category">${categoryName}</a>
+                    <a href="#">
+                        <h3 class="showcase-title">${safeName}</h3>
+                    </a>
+                    <div class="showcase-rating">
+                        <ion-icon name="star"></ion-icon>
+                        <ion-icon name="star"></ion-icon>
+                        <ion-icon name="star"></ion-icon>
+                        <ion-icon name="star"></ion-icon>
+                        <ion-icon name="star-outline"></ion-icon>
+                    </div>
+                    <div class="price-box">
+                        <p class="price">${price.toFixed(2)} BAM</p>
+                        ${oldPrice > 0 ? `<del>${oldPrice.toFixed(2)} BAM</del>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Reinitialize product action buttons
+    initProductActions();
+}
+
+// Initialize product action buttons (add to cart, favorites, etc.)
+function initProductActions() {
+    const productGrid = document.querySelector('.product-grid');
+    if (!productGrid) return;
+
+    productGrid.addEventListener('click', function(e) {
+        const actionBtn = e.target.closest('[data-action]');
+        if (!actionBtn) return;
+
+        const showcase = actionBtn.closest('.showcase');
+        if (!showcase) return;
+
+        const action = actionBtn.dataset.action;
+        const title = showcase.querySelector('.showcase-title')?.textContent || 'Product';
+        const priceText = showcase.querySelector('.price')?.textContent || '0 BAM';
+        const image = showcase.querySelector('.product-img')?.src || '';
+
+        const productData = {
+            title: title,
+            price: priceText,
+            image: image
+        };
+
+        switch(action) {
+            case 'add-cart':
+                addToCart(productData);
+                break;
+            case 'add-favorite':
+                addToFavorites(productData);
+                break;
+            case 'quick-view':
+                // Quick view functionality
+                console.log('Quick view:', productData);
+                break;
+        }
+    });
+}
+
+// ========================================
+// LOAD BANNERS FROM ADMIN (localStorage)
+// ========================================
+function loadBannersFromStorage() {
+    console.log('[Main] loadBannersFromStorage called');
+    const banners = JSON.parse(localStorage.getItem('tarix_banners')) || [];
+    console.log('[Main] Banners in localStorage:', banners.length);
+    if (banners.length === 0) {
+        console.log('[Main] No banners in localStorage, keeping static HTML');
+        return;
+    }
+
+    const swiperWrapper = document.querySelector('.banner-swiper .swiper-wrapper');
+    if (!swiperWrapper) {
+        console.log('[Main] ERROR: .banner-swiper .swiper-wrapper not found!');
+        return;
+    }
+
+    // Filter active banners only
+    const activeBanners = banners.filter(b => b.active);
+    console.log('[Main] Active banners:', activeBanners.length);
+    if (activeBanners.length === 0) {
+        console.log('[Main] No active banners, keeping static HTML');
+        return;
+    }
+    console.log('[Main] Loading', activeBanners.length, 'banners from admin data');
+
+    // Generate banner slides HTML
+    swiperWrapper.innerHTML = activeBanners.map((banner, index) => {
+        const safeTitle = sanitizeHTML(banner.title || '');
+        const safeSubtitle = sanitizeHTML(banner.subtitle || '');
+        const safeText = sanitizeHTML(banner.text || '');
+        const safeImage = sanitizeURL(banner.image_path || './assets/images/banner-1.jpg');
+        const price = banner.price || '20';
+
+        return `
+            <div class="swiper-slide slider-item">
+                <img src="${safeImage}" alt="${safeTitle}" class="banner-img" ${index === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} decoding="async">
+                <div class="banner-content">
+                    <p class="banner-subtitle">${safeSubtitle}</p>
+                    <h2 class="banner-title">${safeTitle}</h2>
+                    <p class="banner-text">
+                        <span data-translate="startingAt">starting at</span> <b>${price}</b>.00 BAM
+                    </p>
+                    <a href="#new-products" class="banner-btn" data-translate="shopNow">Shop now</a>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Reinitialize Swiper after content change
+    if (window.bannerSwiper) {
+        window.bannerSwiper.update();
+        window.bannerSwiper.slideTo(0);
+    }
+}
+
+// ========================================
+// LOAD BEST SELLERS FROM ADMIN (localStorage)
+// ========================================
+function loadBestSellersFromStorage() {
+    const products = JSON.parse(localStorage.getItem('tarix_products')) || [];
+    const bestSellers = products.filter(p => p.best_seller);
+    if (bestSellers.length === 0) return; // Keep static HTML
+
+    const swiperWrapper = document.querySelector('.best-sellers-swiper .swiper-wrapper');
+    if (!swiperWrapper) return;
+
+    swiperWrapper.innerHTML = bestSellers.map(product => {
+        const safeName = sanitizeHTML(product.name || '');
+        const safeImage = sanitizeURL(product.image_path || '');
+        const price = parseFloat(product.price) || 0;
+        const oldPrice = parseFloat(product.old_price) || 0;
+        const discount = product.discount_percentage || 0;
+
+        return `
+            <div class="swiper-slide">
+                <div class="showcase">
+                    <div class="showcase-img-wrapper">
+                        <img src="${safeImage}" alt="${safeName}" width="75" height="75" class="showcase-img">
+                        ${discount > 0 ? `<span class="showcase-badge-sale">-${discount}%</span>` : ''}
+                    </div>
+                    <div class="showcase-content">
+                        <a href="#">
+                            <h4 class="showcase-title">${safeName}</h4>
+                        </a>
+                        <div class="showcase-rating">
+                            <ion-icon name="star"></ion-icon>
+                            <ion-icon name="star"></ion-icon>
+                            <ion-icon name="star"></ion-icon>
+                            <ion-icon name="star"></ion-icon>
+                            <ion-icon name="star"></ion-icon>
+                        </div>
+                        <div class="price-box">
+                            ${oldPrice > 0 ? `<del>${oldPrice.toFixed(2)} BAM</del>` : ''}
+                            <p class="price">${price.toFixed(2)} BAM</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Reinitialize Best Sellers Swiper
+    if (window.bestSellersSwiper) {
+        window.bestSellersSwiper.update();
+    }
 }
 
 // ========================================
@@ -2463,11 +2805,20 @@ document.addEventListener('DOMContentLoaded', async function() {
     initCountdownTimer();
 
     // ========================================
-    // LOAD DYNAMIC CONTENT FROM LOCALSTORAGE
+    // LOAD DYNAMIC CONTENT FROM ADMIN PANEL
     // ========================================
+    console.log('[Main] Starting to load dynamic content from admin panel...');
+    // Load banners from admin (must be before Swiper init in index.html)
+    loadBannersFromStorage();
+
+    // Load categories, testimonials, CTA
     loadCategoriesFromStorage();
     loadTestimonialsFromStorage();
     loadCTAFromStorage();
+
+    // Load products from admin (replaces static HTML if data exists)
+    loadProductsFromStorage();
+    loadBestSellersFromStorage();
 
     // ========================================
     // LOAD PRODUCTS FROM API

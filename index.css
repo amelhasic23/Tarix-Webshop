@@ -2497,6 +2497,41 @@ body.menu-open {
   font-style: italic;
 }
 
+/* Testimonial Cards Wrapper - Horizontal Scroll */
+.testimonial-cards-wrapper {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding: 10px 0 20px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.testimonial-cards-wrapper .testimonial-card {
+  flex: 0 0 300px;
+  min-width: 280px;
+  scroll-snap-align: start;
+  margin-bottom: 0;
+}
+
+/* Scrollbar styling */
+.testimonial-cards-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+
+.testimonial-cards-wrapper::-webkit-scrollbar-track {
+  background: var(--cultured);
+  border-radius: 3px;
+}
+
+.testimonial-cards-wrapper::-webkit-scrollbar-thumb {
+  background: var(--sonic-silver);
+  border-radius: 3px;
+}
+
+.testimonial-cards-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--davys-gray);
+}
 
 
 
@@ -5620,7 +5655,7 @@ body::-webkit-scrollbar-thumb {
     left: 0;
     width: 100%;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.5);
+    background: transparent;
     z-index: 9998;
     opacity: 0;
     visibility: hidden;
@@ -6763,8 +6798,7 @@ select.error {
 /* ========================================
    IMPROVED MODAL ACCESSIBILITY
    ======================================== */
-.cart-modal,
-.favorites-modal,
+/* Checkout and Product Detail modals - centered */
 .checkout-modal,
 .product-detail-modal {
     position: fixed;
@@ -6776,8 +6810,6 @@ select.error {
     display: none;
 }
 
-.cart-modal.active,
-.favorites-modal.active,
 .checkout-modal.active,
 .product-detail-modal.active {
     display: flex;
@@ -6785,8 +6817,14 @@ select.error {
     justify-content: center;
 }
 
+/* Cart and Favorites overlays - fully transparent */
 .cart-modal-overlay,
-.favorites-modal-overlay,
+.favorites-modal-overlay {
+    background: transparent;
+    backdrop-filter: none;
+}
+
+/* Checkout and Product modal overlays - dark background */
 .checkout-modal-overlay,
 .product-modal-overlay {
     position: absolute;
@@ -6798,8 +6836,6 @@ select.error {
     backdrop-filter: blur(4px);
 }
 
-.cart-modal-content,
-.favorites-modal-content,
 .checkout-modal-content,
 .product-modal-content {
     position: relative;
@@ -6851,5 +6887,75 @@ select.error {
     background: var(--bitter-sweet);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(250, 100, 119, 0.3);
+}
+
+/* ========================================
+   BACK TO TOP BUTTON
+   ======================================== */
+.back-to-top-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    background: var(--salmon-pink);
+    color: var(--white);
+    border: none;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.back-to-top-btn.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.back-to-top-btn:hover {
+    background: var(--spanish-carmine);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.back-to-top-btn:focus-visible {
+    outline: 2px solid var(--salmon-pink);
+    outline-offset: 2px;
+}
+
+/* ========================================
+   PERFORMANCE OPTIMIZATIONS
+   ======================================== */
+/* GPU acceleration for animations */
+.cart-modal,
+.favorites-modal,
+.back-to-top-btn,
+.header-user-actions .action-btn {
+    will-change: transform, opacity;
+}
+
+/* Contain layout to prevent reflows */
+.product-card,
+.brand-item,
+.testimonial-card {
+    contain: layout style;
+}
+
+/* Defer rendering of below-fold content */
+.brands-section,
+.testimonial-section,
+.newsletter-section,
+footer {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 500px;
 }
 

@@ -5,6 +5,9 @@ package-lock.json
 # Environment variables
 .env
 
+# Database (not needed for static deployment)
+database/tarix.db
+
 # IDE and editor files
 .vscode/
 .idea/

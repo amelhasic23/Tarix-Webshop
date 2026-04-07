@@ -128,7 +128,8 @@ const translations = {
         saveCTAContent: 'Save CTA Content',
         ctaContentUpdated: 'CTA content updated successfully!',
         failedToUpdateCTA: 'Failed to update CTA',
-        errorSavingCTA: 'Error saving CTA'
+        errorSavingCTA: 'Error saving CTA',
+        cannotDeleteCategoryWithProducts: 'Cannot delete category with existing products. Please reassign or delete products first.'
     },
     de: {
         dashboard: 'Dashboard',
@@ -224,7 +225,8 @@ const translations = {
         saveCTAContent: 'CTA-Inhalt speichern',
         ctaContentUpdated: 'CTA-Inhalt erfolgreich aktualisiert!',
         failedToUpdateCTA: 'CTA konnte nicht aktualisiert werden',
-        errorSavingCTA: 'Fehler beim Speichern des CTA'
+        errorSavingCTA: 'Fehler beim Speichern des CTA',
+        cannotDeleteCategoryWithProducts: 'Kategorie kann nicht gelöscht werden, da Produkte existieren. Bitte zuerst Produkte verschieben oder löschen.'
     },
     bs: {
         dashboard: 'Kontrolna tabla',
@@ -320,7 +322,8 @@ const translations = {
         saveCTAContent: 'Sačuvaj CTA Sadržaj',
         ctaContentUpdated: 'CTA sadržaj uspješno ažuriran!',
         failedToUpdateCTA: 'Greška pri ažuriranju CTA',
-        errorSavingCTA: 'Greška pri čuvanju CTA'
+        errorSavingCTA: 'Greška pri čuvanju CTA',
+        cannotDeleteCategoryWithProducts: 'Kategorija se ne može obrisati jer postoje proizvodi. Molimo prvo premjestite ili obrišite proizvode.'
     }
 };
 
@@ -402,17 +405,25 @@ async function hashPassword(password) {
 
 // ===== AUTH CHECK (localStorage based) =====
 async function checkAuth() {
-    const session = JSON.parse(localStorage.getItem(STORE_KEYS.ADMIN_SESSION));
+    console.log('[Admin] Checking auth...');
+    try {
+        const session = JSON.parse(localStorage.getItem(STORE_KEYS.ADMIN_SESSION));
 
-    if (!session || !session.username || Date.now() > session.expiresAt) {
-        // No valid session - redirect to login
+        if (!session || !session.username || Date.now() > session.expiresAt) {
+            console.log('[Admin] No valid session, redirecting to login');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        console.log('[Admin] Valid session for:', session.username);
+        // Valid session - show admin username and init
+        const usernameEl = document.getElementById('adminUsername');
+        if (usernameEl) usernameEl.textContent = session.username;
+        init();
+    } catch (error) {
+        console.error('[Admin] Auth check error:', error);
         window.location.href = 'login.html';
-        return;
     }
-
-    // Valid session - show admin username and init
-    document.getElementById('adminUsername').textContent = session.username;
-    init();
 }
 
 // Seed default admin if none exists
@@ -429,10 +440,23 @@ async function seedDefaultAdmin() {
     }
 }
 
-// Seed default data if localStorage is empty
+// Seed default data if localStorage is empty or invalid
 function seedDefaultData() {
-    // Seed categories
-    if (!localStorage.getItem(STORE_KEYS.CATEGORIES)) {
+    console.log('[Admin] Seeding default data...');
+
+    // Helper to check if data exists and is valid array
+    const isValidArray = (key) => {
+        try {
+            const data = JSON.parse(localStorage.getItem(key));
+            return Array.isArray(data);
+        } catch {
+            return false;
+        }
+    };
+
+    // Seed categories - also seed if empty array
+    const existingCategories = safeJsonParse(localStorage.getItem(STORE_KEYS.CATEGORIES), null);
+    if (!existingCategories || (Array.isArray(existingCategories) && existingCategories.length === 0)) {
         const defaultCategories = [
             { id: 1, name: 'Dress & frock', icon_path: './assets/images/icons/dress.svg', product_count: 53, order_position: 0 },
             { id: 2, name: 'Winter wear', icon_path: './assets/images/icons/coat.svg', product_count: 58, order_position: 1 },
@@ -444,10 +468,12 @@ function seedDefaultData() {
             { id: 8, name: 'Hat & caps', icon_path: './assets/images/icons/hat.svg', product_count: 39, order_position: 7 }
         ];
         localStorage.setItem(STORE_KEYS.CATEGORIES, JSON.stringify(defaultCategories));
+        console.log('[Admin] Seeded default categories:', defaultCategories.length);
     }
 
-    // Seed testimonials
-    if (!localStorage.getItem(STORE_KEYS.TESTIMONIALS)) {
+    // Seed testimonials - also seed if empty array
+    const existingTestimonials = safeJsonParse(localStorage.getItem(STORE_KEYS.TESTIMONIALS), null);
+    if (!existingTestimonials || (Array.isArray(existingTestimonials) && existingTestimonials.length === 0)) {
         const defaultTestimonials = [
             {
                 id: 1,
@@ -462,6 +488,7 @@ function seedDefaultData() {
             }
         ];
         localStorage.setItem(STORE_KEYS.TESTIMONIALS, JSON.stringify(defaultTestimonials));
+        console.log('[Admin] Seeded default testimonials');
     }
 
     // Seed CTA
@@ -477,36 +504,272 @@ function seedDefaultData() {
             updated_at: new Date().toISOString()
         };
         localStorage.setItem(STORE_KEYS.CTA, JSON.stringify(defaultCTA));
+        console.log('[Admin] Seeded default CTA');
     }
 
-    // Initialize empty arrays if not present
-    if (!localStorage.getItem(STORE_KEYS.BANNERS)) {
-        localStorage.setItem(STORE_KEYS.BANNERS, JSON.stringify([]));
+    // Initialize empty arrays if not present or invalid
+    // Seed banners if empty
+    const existingBanners = safeJsonParse(localStorage.getItem(STORE_KEYS.BANNERS), null);
+    if (!existingBanners || (Array.isArray(existingBanners) && existingBanners.length === 0)) {
+        const defaultBanners = [
+            {
+                id: 1,
+                subtitle: 'Trending Item',
+                title: 'Women\'s Latest Fashion Sale',
+                text: 'Up to 50% off on selected items',
+                price: 'Starting at 29 BAM',
+                image_path: './assets/images/banner-1.jpg',
+                active: 1,
+                created_at: new Date().toISOString()
+            },
+            {
+                id: 2,
+                subtitle: 'Trending Accessories',
+                title: 'Modern Sunglasses',
+                text: 'New collection available',
+                price: 'Starting at 19 BAM',
+                image_path: './assets/images/banner-2.jpg',
+                active: 1,
+                created_at: new Date().toISOString()
+            },
+            {
+                id: 3,
+                subtitle: 'Sale Offer',
+                title: 'New Fashion Summer Sale',
+                text: 'Limited time offer',
+                price: 'Starting at 39 BAM',
+                image_path: './assets/images/banner-3.jpg',
+                active: 1,
+                created_at: new Date().toISOString()
+            }
+        ];
+        localStorage.setItem(STORE_KEYS.BANNERS, JSON.stringify(defaultBanners));
+        console.log('[Admin] Seeded default banners:', defaultBanners.length);
     }
-    if (!localStorage.getItem(STORE_KEYS.PRODUCTS)) {
-        localStorage.setItem(STORE_KEYS.PRODUCTS, JSON.stringify([]));
+
+    // Seed products if empty
+    const existingProducts = safeJsonParse(localStorage.getItem(STORE_KEYS.PRODUCTS), null);
+    if (!existingProducts || (Array.isArray(existingProducts) && existingProducts.length === 0)) {
+        const defaultProducts = [
+            {
+                id: 1,
+                name: 'Relaxed Short Full Sleeve T-Shirt',
+                category_id: 5, // T-shirts
+                price: 45.00,
+                old_price: 75.00,
+                discount_percentage: 15,
+                description: 'Comfortable relaxed fit t-shirt perfect for casual wear.',
+                stock: 50,
+                featured: 1,
+                best_seller: 1,
+                rating: 5,
+                image_path: './assets/images/products/clothes-1.jpg',
+                created_at: new Date().toISOString()
+            },
+            {
+                id: 2,
+                name: 'Girls Pink Embro Design Top',
+                category_id: 1, // Dress & frock
+                price: 61.00,
+                old_price: null,
+                discount_percentage: 0,
+                description: 'Beautiful embroidered top for girls with premium quality fabric.',
+                stock: 30,
+                featured: 1,
+                best_seller: 0,
+                rating: 4,
+                image_path: './assets/images/products/clothes-2.jpg',
+                created_at: new Date().toISOString()
+            },
+            {
+                id: 3,
+                name: 'Pure Garment Dyed Cotton Shirt',
+                category_id: 5, // T-shirts
+                price: 56.00,
+                old_price: 78.00,
+                discount_percentage: 20,
+                description: 'High quality pure cotton shirt with garment dye finish.',
+                stock: 45,
+                featured: 0,
+                best_seller: 1,
+                rating: 5,
+                image_path: './assets/images/products/clothes-3.jpg',
+                created_at: new Date().toISOString()
+            },
+            {
+                id: 4,
+                name: 'Mens Winter Leather Jacket',
+                category_id: 6, // Jacket
+                price: 150.00,
+                old_price: 200.00,
+                discount_percentage: 25,
+                description: 'Premium leather jacket for winter with warm inner lining.',
+                stock: 20,
+                featured: 1,
+                best_seller: 1,
+                rating: 5,
+                image_path: './assets/images/products/jacket-1.jpg',
+                created_at: new Date().toISOString()
+            },
+            {
+                id: 5,
+                name: 'Men Yarn Fleece Full-Zip Jacket',
+                category_id: 6, // Jacket
+                price: 89.00,
+                old_price: 120.00,
+                discount_percentage: 10,
+                description: 'Soft yarn fleece jacket with full zip closure.',
+                stock: 35,
+                featured: 0,
+                best_seller: 0,
+                rating: 4,
+                image_path: './assets/images/products/jacket-5.jpg',
+                created_at: new Date().toISOString()
+            },
+            {
+                id: 6,
+                name: 'Baby Fabric Shoes',
+                category_id: 1, // Dress & frock (closest category)
+                price: 29.00,
+                old_price: 45.00,
+                discount_percentage: 35,
+                description: 'Soft and comfortable fabric shoes for babies.',
+                stock: 100,
+                featured: 1,
+                best_seller: 1,
+                rating: 5,
+                image_path: './assets/images/products/1.jpg',
+                created_at: new Date().toISOString()
+            }
+        ];
+        localStorage.setItem(STORE_KEYS.PRODUCTS, JSON.stringify(defaultProducts));
+        console.log('[Admin] Seeded default products:', defaultProducts.length);
     }
-    if (!localStorage.getItem(STORE_KEYS.NEWSLETTER)) {
+
+    if (!isValidArray(STORE_KEYS.NEWSLETTER)) {
         localStorage.setItem(STORE_KEYS.NEWSLETTER, JSON.stringify([]));
     }
-    if (!localStorage.getItem(STORE_KEYS.ORDERS)) {
+    if (!isValidArray(STORE_KEYS.ORDERS)) {
         localStorage.setItem(STORE_KEYS.ORDERS, JSON.stringify([]));
+    }
+
+    console.log('[Admin] Data seeding complete');
+}
+
+// Main initialization function
+async function initializeApp() {
+    console.log('[Admin] Initializing admin panel...');
+    try {
+        await seedDefaultAdmin();
+        seedDefaultData();
+        setupEventListeners();
+        await checkAuth();
+    } catch (error) {
+        console.error('[Admin] Initialization error:', error);
     }
 }
 
-// Only run checkAuth after DOM is loaded
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', async () => {
-        await seedDefaultAdmin();
-        seedDefaultData();
-        checkAuth();
+// Setup all event listeners after DOM is ready
+function setupEventListeners() {
+    console.log('[Admin] Setting up event listeners...');
+
+    // Modal close handlers
+    const modalClose = document.getElementById('modalClose');
+    if (modalClose) {
+        modalClose.addEventListener('click', closeModal);
+    }
+
+    const modal = document.getElementById('modal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+    }
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('modal');
+            if (modal && modal.classList.contains('active')) {
+                closeModal();
+            }
+        }
     });
+
+    // Navigation menu
+    const menuItems = document.querySelectorAll('.menu-item:not(.logout-btn)');
+    const sections = document.querySelectorAll('.section');
+
+    menuItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const section = item.getAttribute('data-section');
+
+            menuItems.forEach(m => m.classList.remove('active'));
+            item.classList.add('active');
+
+            sections.forEach(s => s.classList.remove('active'));
+            const sectionEl = document.getElementById(`${section}-section`);
+            if (sectionEl) sectionEl.classList.add('active');
+
+            const pageTitle = document.getElementById('pageTitle');
+            if (pageTitle) pageTitle.textContent = t(section);
+
+            currentSection = section;
+            loadSectionData(section);
+        });
+    });
+
+    // Add buttons
+    const addBannerBtn = document.getElementById('addBannerBtn');
+    if (addBannerBtn) {
+        addBannerBtn.addEventListener('click', () => showBannerForm());
+        console.log('[Admin] Banner button listener attached');
+    } else {
+        console.warn('[Admin] addBannerBtn not found');
+    }
+
+    const addCategoryBtn = document.getElementById('addCategoryBtn');
+    if (addCategoryBtn) {
+        addCategoryBtn.addEventListener('click', () => showCategoryForm());
+        console.log('[Admin] Category button listener attached');
+    } else {
+        console.warn('[Admin] addCategoryBtn not found');
+    }
+
+    const addProductBtn = document.getElementById('addProductBtn');
+    if (addProductBtn) {
+        addProductBtn.addEventListener('click', () => showProductForm());
+        console.log('[Admin] Product button listener attached');
+    } else {
+        console.warn('[Admin] addProductBtn not found');
+    }
+
+    const addTestimonialBtn = document.getElementById('addTestimonialBtn');
+    if (addTestimonialBtn) {
+        addTestimonialBtn.addEventListener('click', () => showTestimonialForm());
+        console.log('[Admin] Testimonial button listener attached');
+    } else {
+        console.warn('[Admin] addTestimonialBtn not found');
+    }
+
+    // Order filter
+    const orderStatusFilter = document.getElementById('orderStatusFilter');
+    if (orderStatusFilter) {
+        orderStatusFilter.addEventListener('change', loadOrders);
+        console.log('[Admin] Order filter listener attached');
+    } else {
+        console.warn('[Admin] orderStatusFilter not found');
+    }
+
+    console.log('[Admin] Event listeners setup complete');
+}
+
+// Only run after DOM is loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
-    (async () => {
-        await seedDefaultAdmin();
-        seedDefaultData();
-        checkAuth();
-    })();
+    initializeApp();
 }
 
 // ===== GLOBAL VARIABLES =====
@@ -516,6 +779,10 @@ let categoriesCache = [];
 // ===== UTILITY FUNCTIONS =====
 function showNotification(message, isError = false) {
     const notification = document.getElementById('notification');
+    if (!notification) {
+        console.error('[Admin] Notification element not found');
+        return;
+    }
     notification.textContent = message;
     notification.className = 'notification show';
     if (isError) notification.classList.add('error');
@@ -528,53 +795,20 @@ function showNotification(message, isError = false) {
 function openModal(content) {
     const modal = document.getElementById('modal');
     const modalBody = document.getElementById('modalBody');
+    if (!modal || !modalBody) {
+        console.error('[Admin] Modal elements not found');
+        return;
+    }
     modalBody.innerHTML = content;
     modal.classList.add('active');
 }
 
 function closeModal() {
     const modal = document.getElementById('modal');
-    modal.classList.remove('active');
+    if (modal) modal.classList.remove('active');
 }
 
-document.getElementById('modalClose').addEventListener('click', closeModal);
-
-// Close modal by clicking overlay
-document.getElementById('modal').addEventListener('click', function(e) {
-    if (e.target === this) closeModal();
-});
-
-// Close modal with Escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        const modal = document.getElementById('modal');
-        if (modal && modal.classList.contains('active')) {
-            closeModal();
-        }
-    }
-});
-
-// ===== NAVIGATION =====
-const menuItems = document.querySelectorAll('.menu-item:not(.logout-btn)');
-const sections = document.querySelectorAll('.section');
-
-menuItems.forEach(item => {
-    item.addEventListener('click', (e) => {
-        e.preventDefault();
-        const section = item.getAttribute('data-section');
-
-        menuItems.forEach(m => m.classList.remove('active'));
-        item.classList.add('active');
-
-        sections.forEach(s => s.classList.remove('active'));
-        document.getElementById(`${section}-section`).classList.add('active');
-
-        document.getElementById('pageTitle').textContent = t(section);
-
-        currentSection = section;
-        loadSectionData(section);
-    });
-});
+// NOTE: Event listeners are now attached in setupEventListeners()
 
 // ===== LOGOUT =====
 function setupLogout() {
@@ -590,11 +824,17 @@ function setupLogout() {
 
 // ===== INIT =====
 async function init() {
-    translateUI();
-    setupLanguageSelector();
-    setupLogout();
-    await loadCategories();
-    loadSectionData('dashboard');
+    console.log('[Admin] Running init()...');
+    try {
+        translateUI();
+        setupLanguageSelector();
+        setupLogout();
+        await loadCategories();
+        loadSectionData('dashboard');
+        console.log('[Admin] Init completed successfully');
+    } catch (error) {
+        console.error('[Admin] Init error:', error);
+    }
 }
 
 function setupLanguageSelector() {
@@ -651,15 +891,33 @@ async function loadSectionData(section) {
 
 // ===== DASHBOARD =====
 function loadDashboard() {
-    const products = JSON.parse(localStorage.getItem(STORE_KEYS.PRODUCTS)) || [];
-    const orders = JSON.parse(localStorage.getItem(STORE_KEYS.ORDERS)) || [];
-    const subscribers = JSON.parse(localStorage.getItem(STORE_KEYS.NEWSLETTER)) || [];
-    const categories = JSON.parse(localStorage.getItem(STORE_KEYS.CATEGORIES)) || [];
+    console.log('[Admin] Loading dashboard...');
+    try {
+        const products = JSON.parse(localStorage.getItem(STORE_KEYS.PRODUCTS)) || [];
+        const orders = JSON.parse(localStorage.getItem(STORE_KEYS.ORDERS)) || [];
+        const subscribers = JSON.parse(localStorage.getItem(STORE_KEYS.NEWSLETTER)) || [];
+        const categories = JSON.parse(localStorage.getItem(STORE_KEYS.CATEGORIES)) || [];
+        const banners = JSON.parse(localStorage.getItem(STORE_KEYS.BANNERS)) || [];
 
-    document.getElementById('totalProducts').textContent = products.length;
-    document.getElementById('totalOrders').textContent = orders.length;
-    document.getElementById('totalSubscribers').textContent = subscribers.length;
-    document.getElementById('totalCategories').textContent = categories.length;
+        console.log('[Admin] Stats:', {
+            products: products.length,
+            orders: orders.length,
+            subscribers: subscribers.length,
+            categories: categories.length,
+            banners: banners.length
+        });
+
+        const totalProductsEl = document.getElementById('totalProducts');
+        const totalOrdersEl = document.getElementById('totalOrders');
+        const totalSubscribersEl = document.getElementById('totalSubscribers');
+        const totalCategoriesEl = document.getElementById('totalCategories');
+        const totalBannersEl = document.getElementById('totalBanners');
+
+        if (totalProductsEl) totalProductsEl.textContent = products.length;
+        if (totalOrdersEl) totalOrdersEl.textContent = orders.length;
+        if (totalSubscribersEl) totalSubscribersEl.textContent = subscribers.length;
+        if (totalCategoriesEl) totalCategoriesEl.textContent = categories.length;
+        if (totalBannersEl) totalBannersEl.textContent = banners.length;
 
     // Show recent orders
     const recentOrders = orders.slice(0, 10);
@@ -690,7 +948,13 @@ function loadDashboard() {
         </div>
     ` : `<p>${t('noItemsFound')}</p>`;
 
-    document.getElementById('recentOrdersList').innerHTML = ordersHTML;
+        const recentOrdersEl = document.getElementById('recentOrdersList');
+        if (recentOrdersEl) recentOrdersEl.innerHTML = ordersHTML;
+
+        console.log('[Admin] Dashboard loaded successfully');
+    } catch (error) {
+        console.error('[Admin] Error loading dashboard:', error);
+    }
 }
 
 // ===== BANNERS =====
@@ -716,7 +980,7 @@ function loadBanners() {
     document.getElementById('bannersListContainer').innerHTML = bannersHTML || `<p>${t('noItemsFound')}</p>`;
 }
 
-document.getElementById('addBannerBtn').addEventListener('click', () => showBannerForm());
+// Event listener attached in setupEventListeners()
 
 function showBannerForm(banner = null) {
     const formHTML = `
@@ -848,7 +1112,7 @@ function loadCategories() {
     }
 }
 
-document.getElementById('addCategoryBtn').addEventListener('click', () => showCategoryForm());
+// Event listener attached in setupEventListeners()
 
 function showCategoryForm(category = null) {
     const formHTML = `
@@ -921,6 +1185,19 @@ function editCategory(id) {
 }
 
 function deleteCategory(id) {
+    // Check if any products exist in this category
+    const products = JSON.parse(localStorage.getItem(STORE_KEYS.PRODUCTS)) || [];
+    const categoryProducts = products.filter(p => p.category_id === id);
+
+    if (categoryProducts.length > 0) {
+        showNotification(
+            t('cannotDeleteCategoryWithProducts') ||
+            `Cannot delete category: ${categoryProducts.length} product(s) exist. Reassign or delete them first.`,
+            true
+        );
+        return;
+    }
+
     if (!confirm(t('areYouSure'))) return;
 
     let categories = JSON.parse(localStorage.getItem(STORE_KEYS.CATEGORIES)) || [];
@@ -958,7 +1235,7 @@ function loadProducts() {
     document.getElementById('productsListContainer').innerHTML = productsHTML || '<p>No products found.</p>';
 }
 
-document.getElementById('addProductBtn').addEventListener('click', () => showProductForm());
+// Event listener attached in setupEventListeners()
 
 function showProductForm(product = null) {
     const categoriesOptions = categoriesCache.map(cat =>
@@ -1136,7 +1413,7 @@ function loadTestimonials() {
     document.getElementById('testimonialsListContainer').innerHTML = testimonialsHTML || '<p>No testimonials found.</p>';
 }
 
-document.getElementById('addTestimonialBtn').addEventListener('click', () => showTestimonialForm());
+// Event listener attached in setupEventListeners()
 
 function showTestimonialForm(testimonial = null) {
     const formHTML = `
@@ -1420,7 +1697,7 @@ function loadOrders() {
     document.getElementById('ordersListContainer').innerHTML = orders.length > 0 ? tableHTML : `<p data-translate="noOrdersFound">${t('noOrdersFound')}</p>`;
 }
 
-document.getElementById('orderStatusFilter').addEventListener('change', loadOrders);
+// Event listener attached in setupEventListeners()
 
 function viewOrder(id) {
     const orders = JSON.parse(localStorage.getItem(STORE_KEYS.ORDERS)) || [];

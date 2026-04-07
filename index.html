@@ -3,6 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-MWXXWQJDV8"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-MWXXWQJDV8');
+    </script>
+
     <link rel="stylesheet" href="index.css">
 
     <!-- DNS Prefetch for external domains -->
@@ -10,10 +20,19 @@
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
     <link rel="dns-prefetch" href="https://fonts.googleapis.com">
     <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+    <link rel="dns-prefetch" href="https://cdn-uicons.flaticon.com">
+
+    <!-- Preconnect for faster resource loading -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <link rel="preconnect" href="https://cdn-uicons.flaticon.com" crossorigin>
 
     <!-- Preload critical CSS -->
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" as="style">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+
+    <!-- Flaticon UIcons -->
+    <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,7 +51,8 @@
     <meta property="og:url" content="./index.html">
     <meta property="og:image" content="./assets/images/banner-1.jpg">
     <meta name="theme-color" content="#ffffff">
-    <link rel="icon" href="./assets/images/payment.png" type="image/png">
+    <link rel="icon" href="./Images/logo/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="./Images/logo/favicon.ico" type="image/x-icon">
 </head>
 <body>
 
@@ -1515,44 +1535,44 @@
         <!-- BRANDS SECTION -->
         <section class="brands-section">
             <div class="container">
-                <h2 class="title">Trusted Brands</h2>
-                <p class="brands-subtitle">We partner with the world's most loved brands</p>
+                <h2 class="title" data-translate="trustedBrands">Trusted Brands</h2>
+                <p class="brands-subtitle" data-translate="brandsDescription">We partner with the world's most loved brands</p>
                 <div class="brands-container">
                     <div class="brand-item">
                         <div class="brand-logo">
                             <ion-icon name="diamond-outline"></ion-icon>
                         </div>
-                        <span class="brand-name">Luxe Fashion</span>
+                        <span class="brand-name" data-translate="luxeFashion">Luxe Fashion</span>
                     </div>
                     <div class="brand-item">
                         <div class="brand-logo">
                             <ion-icon name="leaf-outline"></ion-icon>
                         </div>
-                        <span class="brand-name">EcoStyle</span>
+                        <span class="brand-name" data-translate="ecoStyle">EcoStyle</span>
                     </div>
                     <div class="brand-item">
                         <div class="brand-logo">
                             <ion-icon name="star-outline"></ion-icon>
                         </div>
-                        <span class="brand-name">StarWear</span>
+                        <span class="brand-name" data-translate="starWear">StarWear</span>
                     </div>
                     <div class="brand-item">
                         <div class="brand-logo">
                             <ion-icon name="flash-outline"></ion-icon>
                         </div>
-                        <span class="brand-name">Velocity</span>
+                        <span class="brand-name" data-translate="velocity">Velocity</span>
                     </div>
                     <div class="brand-item">
                         <div class="brand-logo">
                             <ion-icon name="heart-outline"></ion-icon>
                         </div>
-                        <span class="brand-name">Amore</span>
+                        <span class="brand-name" data-translate="amore">Amore</span>
                     </div>
                     <div class="brand-item">
                         <div class="brand-logo">
                             <ion-icon name="globe-outline"></ion-icon>
                         </div>
-                        <span class="brand-name">WorldStyle</span>
+                        <span class="brand-name" data-translate="worldStyle">WorldStyle</span>
                     </div>
                 </div>
             </div>
@@ -1785,7 +1805,7 @@
             // ==========================================
 
             // Banner Swiper with autoplay
-            const bannerSwiper = new Swiper('.banner-swiper', {
+            window.bannerSwiper = new Swiper('.banner-swiper', {
                 loop: true,
                 autoplay: {
                     delay: 4000,
@@ -1807,7 +1827,7 @@
             });
 
             // Best Sellers Swiper
-            const bestSellersSwiper = new Swiper('.best-sellers-swiper', {
+            window.bestSellersSwiper = new Swiper('.best-sellers-swiper', {
                 loop: true,
                 autoplay: {
                     delay: 3000,
@@ -1971,6 +1991,11 @@
 
         });
     </script>
+
+    <!-- Back to Top Button -->
+    <button id="backToTopBtn" class="back-to-top-btn" aria-label="Back to top">
+        <ion-icon name="chevron-up-outline"></ion-icon>
+    </button>
 
 </body>
 </html>
