@@ -2385,178 +2385,207 @@ function renderUserDropdown() {
 // ========================================
 
 // Load categories from localStorage (set by admin panel)
-function loadCategoriesFromStorage() {
-    console.log('[Main] loadCategoriesFromStorage called');
+async function loadCategoriesFromStorage() {
+    console.log('[Main] Loading categories from server API...');
     const container = document.querySelector('.category-dropdown-content');
     if (!container) {
         console.log('[Main] ERROR: .category-dropdown-content not found!');
         return;
     }
 
-    const categories = JSON.parse(localStorage.getItem('tarix_categories')) || [];
-    console.log('[Main] Categories in localStorage:', categories.length);
-    if (categories.length === 0) {
-        console.log('[Main] No categories in localStorage, keeping static HTML');
-        return;
-    }
-    console.log('[Main] Loading', categories.length, 'categories from admin data');
+    try {
+        const response = await fetch('/api/public/categories');
+        if (!response.ok) throw new Error('Failed to fetch categories');
 
-    container.innerHTML = categories.map(cat => {
-        const safeName = sanitizeHTML(cat.name || '');
-        const safeIcon = sanitizeURL(cat.icon_path || './assets/images/icons/dress.svg');
-        const safeCount = sanitizeHTML(cat.product_count || 0);
-        const filterAttr = (cat.name || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
-        return `
-        <div class="category-item" data-filter-category="${filterAttr}">
-            <div class="category-img-box">
-                <img src="${safeIcon}" alt="${safeName}" width="30" loading="lazy" decoding="async">
-            </div>
-            <div class="category-content-box">
-                <div class="category-content-flex">
-                    <h3 class="category-item-title">${safeName}</h3>
-                    <p class="category-item-amount">(${safeCount})</p>
+        const categories = await response.json();
+        console.log('[Main] Loaded', categories.length, 'categories from server');
+
+        if (categories.length === 0) {
+            console.log('[Main] No categories found, keeping static HTML');
+            return;
+        }
+
+        container.innerHTML = categories.map(cat => {
+            const safeName = sanitizeHTML(cat.name || '');
+            const safeIcon = sanitizeURL(cat.icon_path || './assets/images/icons/dress.svg');
+            const safeCount = sanitizeHTML(cat.product_count || 0);
+            const filterAttr = (cat.name || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
+            return `
+            <div class="category-item" data-filter-category="${filterAttr}">
+                <div class="category-img-box">
+                    <img src="${safeIcon}" alt="${safeName}" width="30" loading="lazy" decoding="async">
                 </div>
-                <a href="#new-products" class="category-btn" data-translate="showAll">Show all</a>
+                <div class="category-content-box">
+                    <div class="category-content-flex">
+                        <h3 class="category-item-title">${safeName}</h3>
+                        <p class="category-item-amount">(${safeCount})</p>
+                    </div>
+                    <a href="#new-products" class="category-btn" data-translate="showAll">Show all</a>
+                </div>
             </div>
-        </div>
-    `;
-    }).join('');
+        `;
+        }).join('');
+    } catch (error) {
+        console.error('[Main] Error loading categories:', error);
+        // Keep static HTML as fallback
+    }
 }
 
-// Load testimonials from localStorage (set by admin panel)
-function loadTestimonialsFromStorage() {
-    console.log('[Main] loadTestimonialsFromStorage called');
+// Load testimonials from server API
+async function loadTestimonialsFromStorage() {
+    console.log('[Main] Loading testimonials from server API...');
     const container = document.querySelector('.testimonial');
     if (!container) {
         console.log('[Main] ERROR: .testimonial container not found!');
         return;
     }
 
-    const testimonials = JSON.parse(localStorage.getItem('tarix_testimonials')) || [];
-    const activeTestimonials = testimonials.filter(t => t.active);
-    console.log('[Main] Active testimonials:', activeTestimonials.length);
+    try {
+        const response = await fetch('/api/public/testimonials');
+        if (!response.ok) throw new Error('Failed to fetch testimonials');
 
-    if (activeTestimonials.length === 0) {
-        console.log('[Main] No active testimonials, keeping static HTML');
-        return;
+        const testimonials = await response.json();
+        console.log('[Main] Loaded', testimonials.length, 'testimonials from server');
+
+        if (testimonials.length === 0) {
+            console.log('[Main] No testimonials found, keeping static HTML');
+            return;
+        }
+
+        // Preserve the title
+        const title = container.querySelector('.title');
+        const titleHTML = title ? title.outerHTML : '<h2 class="title" data-translate="testimonials">Testimonials</h2>';
+
+        // Generate cards for ALL active testimonials
+        const cardsHTML = testimonials.map(t => `
+            <div class="testimonial-card">
+                <img src="${sanitizeURL(t.image_path || './assets/images/testimonial-1.jpg')}"
+                     alt="${sanitizeHTML(t.customer_name || 'Customer')}" class="testimonial-banner">
+                <p class="testimonial-name">${sanitizeHTML(t.customer_name || 'Customer')}</p>
+                <p class="testimonial-title">${sanitizeHTML(t.customer_role || '')}</p>
+                <img src="./assets/images/icons/quotes.svg" alt="quotation" class="quotation-img">
+                <p class="testimonial-desc">${sanitizeHTML(t.text || '')}</p>
+            </div>
+        `).join('');
+
+        container.innerHTML = titleHTML + '<div class="testimonial-cards-wrapper">' + cardsHTML + '</div>';
+        console.log('[Main] Loaded', testimonials.length, 'testimonial cards');
+    } catch (error) {
+        console.error('[Main] Error loading testimonials:', error);
+        // Keep static HTML as fallback
     }
-
-    // Preserve the title
-    const title = container.querySelector('.title');
-    const titleHTML = title ? title.outerHTML : '<h2 class="title" data-translate="testimonials">Testimonials</h2>';
-
-    // Generate cards for ALL active testimonials
-    const cardsHTML = activeTestimonials.map(t => `
-        <div class="testimonial-card">
-            <img src="${sanitizeURL(t.image_path || './assets/images/testimonial-1.jpg')}"
-                 alt="${sanitizeHTML(t.customer_name || 'Customer')}" class="testimonial-banner">
-            <p class="testimonial-name">${sanitizeHTML(t.customer_name || 'Customer')}</p>
-            <p class="testimonial-title">${sanitizeHTML(t.customer_role || '')}</p>
-            <img src="./assets/images/icons/quotes.svg" alt="quotation" class="quotation-img">
-            <p class="testimonial-desc">${sanitizeHTML(t.text || '')}</p>
-        </div>
-    `).join('');
-
-    container.innerHTML = titleHTML + '<div class="testimonial-cards-wrapper">' + cardsHTML + '</div>';
-    console.log('[Main] Loaded', activeTestimonials.length, 'testimonial cards');
 }
 
-// Load CTA content from localStorage (set by admin panel)
-function loadCTAFromStorage() {
+// Load CTA content from server API
+async function loadCTAFromStorage() {
     const container = document.querySelector('.cta-container');
     if (!container) return;
 
-    const cta = JSON.parse(localStorage.getItem('tarix_cta'));
-    if (!cta || !cta.active) return; // Keep static HTML if no active CTA
+    try {
+        const response = await fetch('/api/public/cta');
+        if (!response.ok) throw new Error('Failed to fetch CTA');
 
-    const bannerImg = container.querySelector('.cta-banner');
-    const discountEl = container.querySelector('.discount');
-    const titleEl = container.querySelector('.cta-title');
-    const textEl = container.querySelector('.cta-text');
-    const btnEl = container.querySelector('.cta-btn');
+        const cta = await response.json();
+        if (!cta) return; // Keep static HTML if no CTA
 
-    if (bannerImg && cta.image_path) bannerImg.src = sanitizeURL(cta.image_path);
-    if (discountEl && cta.subheading) discountEl.textContent = cta.subheading;
-    if (titleEl && cta.heading) titleEl.textContent = cta.heading;
-    if (textEl && cta.text) textEl.textContent = cta.text;
-    if (btnEl && cta.button_text) btnEl.textContent = cta.button_text;
+        const bannerImg = container.querySelector('.cta-banner');
+        const discountEl = container.querySelector('.discount');
+        const titleEl = container.querySelector('.cta-title');
+        const textEl = container.querySelector('.cta-text');
+        const btnEl = container.querySelector('.cta-btn');
+
+        if (bannerImg && cta.image_path) bannerImg.src = sanitizeURL(cta.image_path);
+        if (discountEl && cta.subheading) discountEl.textContent = cta.subheading;
+        if (titleEl && cta.heading) titleEl.textContent = cta.heading;
+        if (textEl && cta.text) textEl.textContent = cta.text;
+        if (btnEl && cta.button_text) btnEl.textContent = cta.button_text;
+    } catch (error) {
+        console.error('[Main] Error loading CTA:', error);
+        // Keep static HTML as fallback
+    }
 }
 
 // ========================================
-// LOAD PRODUCTS FROM ADMIN (localStorage)
+// LOAD PRODUCTS FROM SERVER API
 // ========================================
-function loadProductsFromStorage() {
-    console.log('[Main] loadProductsFromStorage called');
-    const products = JSON.parse(localStorage.getItem('tarix_products')) || [];
-    console.log('[Main] Products in localStorage:', products.length);
-    if (products.length === 0) {
-        console.log('[Main] No products in localStorage, keeping static HTML');
-        return;
-    }
-
-    const categories = JSON.parse(localStorage.getItem('tarix_categories')) || [];
+async function loadProductsFromStorage() {
+    console.log('[Main] Loading products from server API...');
     const productGrid = document.querySelector('.product-grid');
     if (!productGrid) {
         console.log('[Main] ERROR: .product-grid not found!');
         return;
     }
-    console.log('[Main] Loading', products.length, 'products from admin data');
 
-    // Generate product HTML from localStorage data
-    productGrid.innerHTML = products.map(product => {
-        const category = categories.find(c => c.id === product.category_id);
-        const categoryName = category ? sanitizeHTML(category.name) : 'Uncategorized';
-        const categoryFilter = categoryName.toLowerCase().replace(/[^a-z0-9-]/g, '');
-        const safeName = sanitizeHTML(product.name || '');
-        const safeImage = sanitizeURL(product.image_path || './assets/images/products/1.jpg');
-        const price = parseFloat(product.price) || 0;
-        const oldPrice = parseFloat(product.old_price) || 0;
-        const discount = product.discount_percentage || 0;
+    try {
+        const response = await fetch('/api/public/products');
+        if (!response.ok) throw new Error('Failed to fetch products');
 
-        return `
-            <div class="showcase" data-category="${categoryFilter}">
-                <div class="showcase-banner">
-                    <img src="${safeImage}" alt="${safeName}" width="300" class="product-img default" loading="lazy" decoding="async">
-                    ${discount > 0 ? `<p class="showcase-badge">${discount}%</p>` : ''}
-                    ${product.best_seller ? '<p class="showcase-badge angle pink">Best</p>' : ''}
-                    <div class="showcase-actions">
-                        <button class="btn-action" aria-label="Add to favorites" data-action="add-favorite">
-                            <ion-icon name="heart-outline"></ion-icon>
-                        </button>
-                        <button class="btn-action" aria-label="Quick view" data-action="quick-view">
-                            <ion-icon name="eye-outline"></ion-icon>
-                        </button>
-                        <button class="btn-action" aria-label="Compare" data-action="compare">
-                            <ion-icon name="repeat-outline"></ion-icon>
-                        </button>
-                        <button class="btn-action" aria-label="Add to cart" data-action="add-cart">
-                            <ion-icon name="bag-add-outline"></ion-icon>
-                        </button>
+        const products = await response.json();
+        console.log('[Main] Loaded', products.length, 'products from server');
+
+        if (products.length === 0) {
+            console.log('[Main] No products found, keeping static HTML');
+            return;
+        }
+
+        // Generate product HTML from API data
+        productGrid.innerHTML = products.map(product => {
+            const categoryName = sanitizeHTML(product.category_name || 'Uncategorized');
+            const categoryFilter = categoryName.toLowerCase().replace(/[^a-z0-9-]/g, '');
+            const safeName = sanitizeHTML(product.name || '');
+            const safeImage = sanitizeURL(product.image_path || './assets/images/products/1.jpg');
+            const price = parseFloat(product.price) || 0;
+            const oldPrice = parseFloat(product.old_price) || 0;
+            const discount = product.discount_percentage || 0;
+
+            return `
+                <div class="showcase" data-category="${categoryFilter}">
+                    <div class="showcase-banner">
+                        <img src="${safeImage}" alt="${safeName}" width="300" class="product-img default" loading="lazy" decoding="async">
+                        ${discount > 0 ? `<p class="showcase-badge">${discount}%</p>` : ''}
+                        ${product.best_seller ? '<p class="showcase-badge angle pink">Best</p>' : ''}
+                        <div class="showcase-actions">
+                            <button class="btn-action" aria-label="Add to favorites" data-action="add-favorite">
+                                <ion-icon name="heart-outline"></ion-icon>
+                            </button>
+                            <button class="btn-action" aria-label="Quick view" data-action="quick-view">
+                                <ion-icon name="eye-outline"></ion-icon>
+                            </button>
+                            <button class="btn-action" aria-label="Compare" data-action="compare">
+                                <ion-icon name="repeat-outline"></ion-icon>
+                            </button>
+                            <button class="btn-action" aria-label="Add to cart" data-action="add-cart">
+                                <ion-icon name="bag-add-outline"></ion-icon>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="showcase-content">
+                        <a href="#" class="showcase-category">${categoryName}</a>
+                        <a href="#">
+                            <h3 class="showcase-title">${safeName}</h3>
+                        </a>
+                        <div class="showcase-rating">
+                            <ion-icon name="star"></ion-icon>
+                            <ion-icon name="star"></ion-icon>
+                            <ion-icon name="star"></ion-icon>
+                            <ion-icon name="star"></ion-icon>
+                            <ion-icon name="star-outline"></ion-icon>
+                        </div>
+                        <div class="price-box">
+                            <p class="price">${price.toFixed(2)} BAM</p>
+                            ${oldPrice > 0 ? `<del>${oldPrice.toFixed(2)} BAM</del>` : ''}
+                        </div>
                     </div>
                 </div>
-                <div class="showcase-content">
-                    <a href="#" class="showcase-category">${categoryName}</a>
-                    <a href="#">
-                        <h3 class="showcase-title">${safeName}</h3>
-                    </a>
-                    <div class="showcase-rating">
-                        <ion-icon name="star"></ion-icon>
-                        <ion-icon name="star"></ion-icon>
-                        <ion-icon name="star"></ion-icon>
-                        <ion-icon name="star"></ion-icon>
-                        <ion-icon name="star-outline"></ion-icon>
-                    </div>
-                    <div class="price-box">
-                        <p class="price">${price.toFixed(2)} BAM</p>
-                        ${oldPrice > 0 ? `<del>${oldPrice.toFixed(2)} BAM</del>` : ''}
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
+            `;
+        }).join('');
 
-    // Reinitialize product action buttons
-    initProductActions();
+        // Reinitialize product action buttons
+        initProductActions();
+    } catch (error) {
+        console.error('[Main] Error loading products:', error);
+        // Keep static HTML as fallback
+    }
 }
 
 // Initialize product action buttons (add to cart, favorites, etc.)
@@ -2598,111 +2627,117 @@ function initProductActions() {
 }
 
 // ========================================
-// LOAD BANNERS FROM ADMIN (localStorage)
+// LOAD BANNERS FROM SERVER API
 // ========================================
-function loadBannersFromStorage() {
-    console.log('[Main] loadBannersFromStorage called');
-    const banners = JSON.parse(localStorage.getItem('tarix_banners')) || [];
-    console.log('[Main] Banners in localStorage:', banners.length);
-    if (banners.length === 0) {
-        console.log('[Main] No banners in localStorage, keeping static HTML');
-        return;
-    }
-
+async function loadBannersFromStorage() {
+    console.log('[Main] Loading banners from server API...');
     const swiperWrapper = document.querySelector('.banner-swiper .swiper-wrapper');
     if (!swiperWrapper) {
         console.log('[Main] ERROR: .banner-swiper .swiper-wrapper not found!');
         return;
     }
 
-    // Filter active banners only
-    const activeBanners = banners.filter(b => b.active);
-    console.log('[Main] Active banners:', activeBanners.length);
-    if (activeBanners.length === 0) {
-        console.log('[Main] No active banners, keeping static HTML');
-        return;
-    }
-    console.log('[Main] Loading', activeBanners.length, 'banners from admin data');
+    try {
+        const response = await fetch('/api/public/banners');
+        if (!response.ok) throw new Error('Failed to fetch banners');
 
-    // Generate banner slides HTML
-    swiperWrapper.innerHTML = activeBanners.map((banner, index) => {
-        const safeTitle = sanitizeHTML(banner.title || '');
-        const safeSubtitle = sanitizeHTML(banner.subtitle || '');
-        const safeText = sanitizeHTML(banner.text || '');
-        const safeImage = sanitizeURL(banner.image_path || './assets/images/banner-1.jpg');
-        const price = banner.price || '20';
+        const banners = await response.json();
+        console.log('[Main] Loaded', banners.length, 'banners from server');
 
-        return `
-            <div class="swiper-slide slider-item">
-                <img src="${safeImage}" alt="${safeTitle}" class="banner-img" ${index === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} decoding="async">
-                <div class="banner-content">
-                    <p class="banner-subtitle">${safeSubtitle}</p>
-                    <h2 class="banner-title">${safeTitle}</h2>
-                    <p class="banner-text">
-                        <span data-translate="startingAt">starting at</span> <b>${price}</b>.00 BAM
-                    </p>
-                    <a href="#new-products" class="banner-btn" data-translate="shopNow">Shop now</a>
+        if (banners.length === 0) {
+            console.log('[Main] No banners found, keeping static HTML');
+            return;
+        }
+
+        // Generate banner slides HTML
+        swiperWrapper.innerHTML = banners.map((banner, index) => {
+            const safeTitle = sanitizeHTML(banner.title || '');
+            const safeSubtitle = sanitizeHTML(banner.subtitle || '');
+            const safeImage = sanitizeURL(banner.image_path || './assets/images/banner-1.jpg');
+            const price = banner.price || '20';
+
+            return `
+                <div class="swiper-slide slider-item">
+                    <img src="${safeImage}" alt="${safeTitle}" class="banner-img" ${index === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} decoding="async">
+                    <div class="banner-content">
+                        <p class="banner-subtitle">${safeSubtitle}</p>
+                        <h2 class="banner-title">${safeTitle}</h2>
+                        <p class="banner-text">
+                            <span data-translate="startingAt">starting at</span> <b>${price}</b>.00 BAM
+                        </p>
+                        <a href="#new-products" class="banner-btn" data-translate="shopNow">Shop now</a>
+                    </div>
                 </div>
-            </div>
-        `;
-    }).join('');
+            `;
+        }).join('');
 
-    // Reinitialize Swiper after content change
-    if (window.bannerSwiper) {
-        window.bannerSwiper.update();
-        window.bannerSwiper.slideTo(0);
+        // Reinitialize Swiper after content change
+        if (window.bannerSwiper) {
+            window.bannerSwiper.update();
+            window.bannerSwiper.slideTo(0);
+        }
+    } catch (error) {
+        console.error('[Main] Error loading banners:', error);
+        // Keep static HTML as fallback
     }
 }
 
 // ========================================
-// LOAD BEST SELLERS FROM ADMIN (localStorage)
+// LOAD BEST SELLERS FROM SERVER API
 // ========================================
-function loadBestSellersFromStorage() {
-    const products = JSON.parse(localStorage.getItem('tarix_products')) || [];
-    const bestSellers = products.filter(p => p.best_seller);
-    if (bestSellers.length === 0) return; // Keep static HTML
-
+async function loadBestSellersFromStorage() {
     const swiperWrapper = document.querySelector('.best-sellers-swiper .swiper-wrapper');
     if (!swiperWrapper) return;
 
-    swiperWrapper.innerHTML = bestSellers.map(product => {
-        const safeName = sanitizeHTML(product.name || '');
-        const safeImage = sanitizeURL(product.image_path || '');
-        const price = parseFloat(product.price) || 0;
-        const oldPrice = parseFloat(product.old_price) || 0;
-        const discount = product.discount_percentage || 0;
+    try {
+        const response = await fetch('/api/public/bestsellers');
+        if (!response.ok) throw new Error('Failed to fetch bestsellers');
 
-        return `
-            <div class="swiper-slide">
-                <div class="showcase">
-                    <div class="showcase-img-wrapper">
-                        <img src="${safeImage}" alt="${safeName}" width="75" height="75" class="showcase-img">
-                        ${discount > 0 ? `<span class="showcase-badge-sale">-${discount}%</span>` : ''}
-                    </div>
-                    <div class="showcase-content">
-                        <a href="#">
-                            <h4 class="showcase-title">${safeName}</h4>
-                        </a>
-                        <div class="showcase-rating">
-                            <ion-icon name="star"></ion-icon>
-                            <ion-icon name="star"></ion-icon>
-                            <ion-icon name="star"></ion-icon>
-                            <ion-icon name="star"></ion-icon>
-                            <ion-icon name="star"></ion-icon>
+        const bestSellers = await response.json();
+        if (bestSellers.length === 0) return; // Keep static HTML
+
+        swiperWrapper.innerHTML = bestSellers.map(product => {
+            const safeName = sanitizeHTML(product.name || '');
+            const safeImage = sanitizeURL(product.image_path || '');
+            const price = parseFloat(product.price) || 0;
+            const oldPrice = parseFloat(product.old_price) || 0;
+            const discount = product.discount_percentage || 0;
+
+            return `
+                <div class="swiper-slide">
+                    <div class="showcase">
+                        <div class="showcase-img-wrapper">
+                            <img src="${safeImage}" alt="${safeName}" width="75" height="75" class="showcase-img">
+                            ${discount > 0 ? `<span class="showcase-badge-sale">-${discount}%</span>` : ''}
                         </div>
-                        <div class="price-box">
-                            ${oldPrice > 0 ? `<del>${oldPrice.toFixed(2)} BAM</del>` : ''}
-                            <p class="price">${price.toFixed(2)} BAM</p>
+                        <div class="showcase-content">
+                            <a href="#">
+                                <h4 class="showcase-title">${safeName}</h4>
+                            </a>
+                            <div class="showcase-rating">
+                                <ion-icon name="star"></ion-icon>
+                                <ion-icon name="star"></ion-icon>
+                                <ion-icon name="star"></ion-icon>
+                                <ion-icon name="star"></ion-icon>
+                                <ion-icon name="star"></ion-icon>
+                            </div>
+                            <div class="price-box">
+                                ${oldPrice > 0 ? `<del>${oldPrice.toFixed(2)} BAM</del>` : ''}
+                                <p class="price">${price.toFixed(2)} BAM</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        `;
-    }).join('');
+            `;
+        }).join('');
 
-    // Reinitialize Best Sellers Swiper
-    if (window.bestSellersSwiper) {
-        window.bestSellersSwiper.update();
+        // Reinitialize Best Sellers Swiper
+        if (window.bestSellersSwiper) {
+            window.bestSellersSwiper.update();
+        }
+    } catch (error) {
+        console.error('[Main] Error loading bestsellers:', error);
+        // Keep static HTML as fallback
     }
 }
 

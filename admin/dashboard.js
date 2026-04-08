@@ -689,8 +689,7 @@ function seedDefaultData() {
 async function initializeApp() {
     console.log('[Admin] Initializing admin panel...');
     try {
-        await seedDefaultAdmin();
-        seedDefaultData();
+        // Note: seedDefaultAdmin and seedDefaultData removed - server handles all data
         setupEventListeners();
         await checkAuth();
     } catch (error) {
@@ -923,14 +922,17 @@ async function loadSectionData(section) {
 }
 
 // ===== DASHBOARD =====
-function loadDashboard() {
+async function loadDashboard() {
     console.log('[Admin] Loading dashboard...');
     try {
-        const products = JSON.parse(localStorage.getItem(STORE_KEYS.PRODUCTS)) || [];
-        const orders = JSON.parse(localStorage.getItem(STORE_KEYS.ORDERS)) || [];
-        const subscribers = JSON.parse(localStorage.getItem(STORE_KEYS.NEWSLETTER)) || [];
-        const categories = JSON.parse(localStorage.getItem(STORE_KEYS.CATEGORIES)) || [];
-        const banners = JSON.parse(localStorage.getItem(STORE_KEYS.BANNERS)) || [];
+        // Fetch all data in parallel from API
+        const [products, orders, subscribers, categories, banners] = await Promise.all([
+            api('/products'),
+            api('/orders'),
+            api('/newsletter/subscribers'),
+            api('/categories'),
+            api('/banners')
+        ]);
 
         console.log('[Admin] Stats:', {
             products: products.length,
@@ -969,8 +971,8 @@ function loadDashboard() {
                 <tbody>
                     ${recentOrders.map(order => `
                         <tr>
-                            <td>${order.order_number}</td>
-                            <td>${order.customer_data?.firstName || ''} ${order.customer_data?.lastName || ''}</td>
+                            <td>${escapeHTML(order.order_number)}</td>
+                            <td>${escapeHTML(order.customer_data?.firstName || '')} ${escapeHTML(order.customer_data?.lastName || '')}</td>
                             <td>${new Date(order.created_at).toLocaleDateString()}</td>
                             <td>${order.total} BAM</td>
                             <td><span class="status-badge status-${order.status}">${t(order.status)}</span></td>
@@ -987,30 +989,36 @@ function loadDashboard() {
         console.log('[Admin] Dashboard loaded successfully');
     } catch (error) {
         console.error('[Admin] Error loading dashboard:', error);
+        showNotification('Failed to load dashboard data', true);
     }
 }
 
 // ===== BANNERS =====
-function loadBanners() {
-    const banners = safeJsonParse(localStorage.getItem(STORE_KEYS.BANNERS), []);
+async function loadBanners() {
+    try {
+        const banners = await api('/banners');
 
-    const bannersHTML = banners.map(banner => `
-        <div class="item-card">
-            <img src="${escapeHTML(banner.image_path)}" alt="${escapeHTML(banner.title)}">
-            <div class="item-card-content">
-                <h3>${escapeHTML(banner.title)}</h3>
-                <p><strong>${t('subtitle')}:</strong> ${escapeHTML(banner.subtitle)}</p>
-                <p><strong>${t('price')}:</strong> ${escapeHTML(banner.price) || 'N/A'}</p>
-                <p><strong>${t('status')}:</strong> ${banner.active ? t('active') : t('inactive')}</p>
-                <div class="item-actions">
-                    <button class="btn-success" onclick="editBanner(${banner.id})">${t('edit')}</button>
-                    <button class="btn-danger" onclick="deleteBanner(${banner.id})">${t('delete')}</button>
+        const bannersHTML = banners.map(banner => `
+            <div class="item-card">
+                <img src="${escapeHTML(banner.image_path)}" alt="${escapeHTML(banner.title)}">
+                <div class="item-card-content">
+                    <h3>${escapeHTML(banner.title)}</h3>
+                    <p><strong>${t('subtitle')}:</strong> ${escapeHTML(banner.subtitle)}</p>
+                    <p><strong>${t('price')}:</strong> ${escapeHTML(banner.price) || 'N/A'}</p>
+                    <p><strong>${t('status')}:</strong> ${banner.active ? t('active') : t('inactive')}</p>
+                    <div class="item-actions">
+                        <button class="btn-success" onclick="editBanner(${banner.id})">${t('edit')}</button>
+                        <button class="btn-danger" onclick="deleteBanner(${banner.id})">${t('delete')}</button>
+                    </div>
                 </div>
             </div>
-        </div>
-    `).join('');
+        `).join('');
 
-    document.getElementById('bannersListContainer').innerHTML = bannersHTML || `<p>${t('noItemsFound')}</p>`;
+        document.getElementById('bannersListContainer').innerHTML = bannersHTML || `<p>${t('noItemsFound')}</p>`;
+    } catch (error) {
+        console.error('Error loading banners:', error);
+        showNotification('Failed to load banners', true);
+    }
 }
 
 // Event listener attached in setupEventListeners()
@@ -1066,82 +1074,96 @@ function showBannerForm(banner = null) {
 
 async function saveBanner() {
     const bannerId = document.getElementById('bannerId').value;
-    const banners = JSON.parse(localStorage.getItem(STORE_KEYS.BANNERS)) || [];
 
-    const bannerData = {
-        subtitle: document.getElementById('bannerSubtitle').value,
-        title: document.getElementById('bannerTitle').value,
-        text: document.getElementById('bannerText').value,
-        price: document.getElementById('bannerPrice').value,
-        active: document.getElementById('bannerActive').checked ? 1 : 0
-    };
+    const formData = new FormData();
+    formData.append('subtitle', document.getElementById('bannerSubtitle').value);
+    formData.append('title', document.getElementById('bannerTitle').value);
+    formData.append('text', document.getElementById('bannerText').value || '');
+    formData.append('price', document.getElementById('bannerPrice').value || '');
+    formData.append('active', document.getElementById('bannerActive').checked ? '1' : '0');
 
     const imageFile = document.getElementById('bannerImage').files[0];
     if (imageFile) {
-        bannerData.image_path = await compressImage(imageFile, 1200);
+        formData.append('image', imageFile);
+    } else if (!bannerId) {
+        showNotification('Please select an image', true);
+        return;
     }
 
-    if (bannerId) {
-        // Update existing
-        const idx = banners.findIndex(b => b.id === parseInt(bannerId));
-        if (idx !== -1) {
-            banners[idx] = { ...banners[idx], ...bannerData };
-        }
-    } else {
-        // Create new
-        bannerData.id = Date.now();
-        bannerData.created_at = new Date().toISOString();
-        if (!bannerData.image_path) {
-            showNotification('Please select an image', true);
-            return;
-        }
-        banners.push(bannerData);
-    }
+    try {
+        const url = bannerId ? `/api/banners/${bannerId}` : '/api/banners';
+        const method = bannerId ? 'PUT' : 'POST';
 
-    if (safeSetItem(STORE_KEYS.BANNERS, JSON.stringify(banners))) {
+        const response = await fetch(url, {
+            method: method,
+            credentials: 'include',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to save banner');
+        }
+
         showNotification(t('successfullySaved'));
         closeModal();
         loadBanners();
+    } catch (error) {
+        console.error('Error saving banner:', error);
+        showNotification(error.message || 'Failed to save banner', true);
     }
 }
 
-function editBanner(id) {
-    const banners = JSON.parse(localStorage.getItem(STORE_KEYS.BANNERS)) || [];
-    const banner = banners.find(b => b.id === id);
-    if (banner) showBannerForm(banner);
+async function editBanner(id) {
+    try {
+        const banner = await api(`/banners/${id}`);
+        if (banner) showBannerForm(banner);
+    } catch (error) {
+        console.error('Error loading banner:', error);
+        showNotification('Failed to load banner', true);
+    }
 }
 
-function deleteBanner(id) {
+async function deleteBanner(id) {
     if (!confirm(t('areYouSure'))) return;
 
-    let banners = JSON.parse(localStorage.getItem(STORE_KEYS.BANNERS)) || [];
-    banners = banners.filter(b => b.id !== id);
-    localStorage.setItem(STORE_KEYS.BANNERS, JSON.stringify(banners));
-    showNotification(t('successfullyDeleted'));
-    loadBanners();
+    try {
+        await api(`/banners/${id}`, { method: 'DELETE' });
+        showNotification(t('successfullyDeleted'));
+        loadBanners();
+    } catch (error) {
+        console.error('Error deleting banner:', error);
+        showNotification('Failed to delete banner', true);
+    }
 }
 
 // ===== CATEGORIES =====
-function loadCategories() {
-    const categories = safeJsonParse(localStorage.getItem(STORE_KEYS.CATEGORIES), []);
-    categoriesCache = categories;
+async function loadCategories() {
+    try {
+        const categories = await api('/categories');
+        categoriesCache = categories;
 
-    if (currentSection === 'categories') {
-        const categoriesHTML = categories.map(category => `
-            <div class="item-card">
-                ${category.icon_path ? `<img src="${escapeHTML(category.icon_path)}" alt="${escapeHTML(category.name)}">` : '<div style="height:200px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;">No Icon</div>'}
-                <div class="item-card-content">
-                    <h3>${escapeHTML(category.name)}</h3>
-                    <p><strong>Products:</strong> ${category.product_count || 0}</p>
-                    <div class="item-actions">
-                        <button class="btn-success" onclick="editCategory(${category.id})">Edit</button>
-                        <button class="btn-danger" onclick="deleteCategory(${category.id})">Delete</button>
+        if (currentSection === 'categories') {
+            const categoriesHTML = categories.map(category => `
+                <div class="item-card">
+                    ${category.icon_path ? `<img src="${escapeHTML(category.icon_path)}" alt="${escapeHTML(category.name)}">` : '<div style="height:200px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;">No Icon</div>'}
+                    <div class="item-card-content">
+                        <h3>${escapeHTML(category.name)}</h3>
+                        <p><strong>Products:</strong> ${category.product_count || 0}</p>
+                        <div class="item-actions">
+                            <button class="btn-success" onclick="editCategory(${category.id})">Edit</button>
+                            <button class="btn-danger" onclick="deleteCategory(${category.id})">Delete</button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            `).join('');
 
-        document.getElementById('categoriesListContainer').innerHTML = categoriesHTML || '<p>No categories found.</p>';
+            document.getElementById('categoriesListContainer').innerHTML = categoriesHTML || '<p>No categories found.</p>';
+        }
+    } catch (error) {
+        console.error('Error loading categories:', error);
+        showNotification('Failed to load categories', true);
     }
 }
 
@@ -1178,66 +1200,61 @@ function showCategoryForm(category = null) {
 
 async function saveCategory() {
     const categoryId = document.getElementById('categoryId').value;
-    const categories = JSON.parse(localStorage.getItem(STORE_KEYS.CATEGORIES)) || [];
 
-    const categoryData = {
-        name: document.getElementById('categoryName').value
-    };
+    const formData = new FormData();
+    formData.append('name', document.getElementById('categoryName').value);
 
     const iconFile = document.getElementById('categoryIcon').files[0];
     if (iconFile) {
-        categoryData.icon_path = await compressImage(iconFile, 100);
+        formData.append('icon', iconFile);
     }
 
-    if (categoryId) {
-        // Update existing
-        const idx = categories.findIndex(c => c.id === parseInt(categoryId));
-        if (idx !== -1) {
-            categories[idx] = { ...categories[idx], ...categoryData };
+    try {
+        const url = categoryId ? `/api/categories/${categoryId}` : '/api/categories';
+        const method = categoryId ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method: method,
+            credentials: 'include',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to save category');
         }
-    } else {
-        // Create new
-        categoryData.id = Date.now();
-        categoryData.product_count = 0;
-        categoryData.order_position = categories.length;
-        categoryData.created_at = new Date().toISOString();
-        categories.push(categoryData);
-    }
 
-    if (safeSetItem(STORE_KEYS.CATEGORIES, JSON.stringify(categories))) {
         showNotification(t('successfullySaved'));
         closeModal();
         loadCategories();
+    } catch (error) {
+        console.error('Error saving category:', error);
+        showNotification(error.message || 'Failed to save category', true);
     }
 }
 
-function editCategory(id) {
-    const categories = JSON.parse(localStorage.getItem(STORE_KEYS.CATEGORIES)) || [];
-    const category = categories.find(c => c.id === id);
-    if (category) showCategoryForm(category);
+async function editCategory(id) {
+    try {
+        const category = await api(`/categories/${id}`);
+        if (category) showCategoryForm(category);
+    } catch (error) {
+        console.error('Error loading category:', error);
+        showNotification('Failed to load category', true);
+    }
 }
 
-function deleteCategory(id) {
-    // Check if any products exist in this category
-    const products = JSON.parse(localStorage.getItem(STORE_KEYS.PRODUCTS)) || [];
-    const categoryProducts = products.filter(p => p.category_id === id);
-
-    if (categoryProducts.length > 0) {
-        showNotification(
-            t('cannotDeleteCategoryWithProducts') ||
-            `Cannot delete category: ${categoryProducts.length} product(s) exist. Reassign or delete them first.`,
-            true
-        );
-        return;
-    }
-
+async function deleteCategory(id) {
     if (!confirm(t('areYouSure'))) return;
 
-    let categories = JSON.parse(localStorage.getItem(STORE_KEYS.CATEGORIES)) || [];
-    categories = categories.filter(c => c.id !== id);
-    localStorage.setItem(STORE_KEYS.CATEGORIES, JSON.stringify(categories));
-    showNotification(t('successfullyDeleted'));
-    loadCategories();
+    try {
+        await api(`/categories/${id}`, { method: 'DELETE' });
+        showNotification(t('successfullyDeleted'));
+        loadCategories();
+    } catch (error) {
+        console.error('Error deleting category:', error);
+        showNotification(error.message || 'Failed to delete category', true);
+    }
 }
 
 // ===== PRODUCTS =====
@@ -1435,26 +1452,29 @@ async function deleteProduct(id) {
 
 // ===== TESTIMONIALS =====
 function loadTestimonials() {
-    const testimonials = JSON.parse(localStorage.getItem(STORE_KEYS.TESTIMONIALS)) || [];
-
-    const testimonialsHTML = testimonials.map(testimonial => `
-        <div class="item-card">
-            ${testimonial.image_path ? `<img src="${testimonial.image_path}" alt="${testimonial.customer_name}">` : '<div style="height:200px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;">No Image</div>'}
-            <div class="item-card-content">
-                <h3>${testimonial.customer_name}</h3>
-                <p><strong>Role:</strong> ${testimonial.customer_role || 'Customer'}</p>
-                <p>${testimonial.text.substring(0, 100)}...</p>
-                <p><strong>Rating:</strong> ${testimonial.rating}/5</p>
-                <p><strong>Status:</strong> ${testimonial.active ? 'Active' : 'Inactive'}</p>
-                <div class="item-actions">
-                    <button class="btn-success" onclick="editTestimonial(${testimonial.id})">Edit</button>
-                    <button class="btn-danger" onclick="deleteTestimonial(${testimonial.id})">Delete</button>
+    api('/testimonials').then(testimonials => {
+        const testimonialsHTML = testimonials.map(testimonial => `
+            <div class="item-card">
+                ${testimonial.image_path ? `<img src="${escapeHTML(testimonial.image_path)}" alt="${escapeHTML(testimonial.customer_name)}">` : '<div style="height:200px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;">No Image</div>'}
+                <div class="item-card-content">
+                    <h3>${escapeHTML(testimonial.customer_name)}</h3>
+                    <p><strong>Role:</strong> ${escapeHTML(testimonial.customer_role) || 'Customer'}</p>
+                    <p>${escapeHTML(testimonial.text?.substring(0, 100))}...</p>
+                    <p><strong>Rating:</strong> ${testimonial.rating}/5</p>
+                    <p><strong>Status:</strong> ${testimonial.active ? 'Active' : 'Inactive'}</p>
+                    <div class="item-actions">
+                        <button class="btn-success" onclick="editTestimonial(${testimonial.id})">Edit</button>
+                        <button class="btn-danger" onclick="deleteTestimonial(${testimonial.id})">Delete</button>
+                    </div>
                 </div>
             </div>
-        </div>
-    `).join('');
+        `).join('');
 
-    document.getElementById('testimonialsListContainer').innerHTML = testimonialsHTML || '<p>No testimonials found.</p>';
+        document.getElementById('testimonialsListContainer').innerHTML = testimonialsHTML || '<p>No testimonials found.</p>';
+    }).catch(error => {
+        console.error('Error loading testimonials:', error);
+        showNotification('Failed to load testimonials', true);
+    });
 }
 
 // Event listener attached in setupEventListeners()
@@ -1510,272 +1530,309 @@ function showTestimonialForm(testimonial = null) {
 
 async function saveTestimonial() {
     const testimonialId = document.getElementById('testimonialId').value;
-    const testimonials = JSON.parse(localStorage.getItem(STORE_KEYS.TESTIMONIALS)) || [];
 
-    const testimonialData = {
-        customer_name: document.getElementById('testimonialName').value,
-        customer_role: document.getElementById('testimonialRole').value,
-        text: document.getElementById('testimonialText').value,
-        rating: parseInt(document.getElementById('testimonialRating').value),
-        active: document.getElementById('testimonialActive').checked ? 1 : 0
-    };
+    const formData = new FormData();
+    formData.append('customer_name', document.getElementById('testimonialName').value);
+    formData.append('customer_role', document.getElementById('testimonialRole').value || '');
+    formData.append('text', document.getElementById('testimonialText').value);
+    formData.append('rating', document.getElementById('testimonialRating').value);
+    formData.append('active', document.getElementById('testimonialActive').checked ? '1' : '0');
 
     const imageFile = document.getElementById('testimonialImage').files[0];
     if (imageFile) {
-        testimonialData.image_path = await compressImage(imageFile, 200);
+        formData.append('image', imageFile);
     }
 
-    if (testimonialId) {
-        // Update existing
-        const idx = testimonials.findIndex(t => t.id === parseInt(testimonialId));
-        if (idx !== -1) {
-            testimonials[idx] = { ...testimonials[idx], ...testimonialData };
+    try {
+        const url = testimonialId ? `/api/testimonials/${testimonialId}` : '/api/testimonials';
+        const method = testimonialId ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method: method,
+            credentials: 'include',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to save testimonial');
         }
-    } else {
-        // Create new
-        testimonialData.id = Date.now();
-        testimonialData.order_position = testimonials.length;
-        testimonialData.created_at = new Date().toISOString();
-        testimonials.push(testimonialData);
-    }
 
-    if (safeSetItem(STORE_KEYS.TESTIMONIALS, JSON.stringify(testimonials))) {
         showNotification(t('successfullySaved'));
         closeModal();
         loadTestimonials();
+    } catch (error) {
+        console.error('Error saving testimonial:', error);
+        showNotification(error.message || 'Failed to save testimonial', true);
     }
 }
 
-function editTestimonial(id) {
-    const testimonials = JSON.parse(localStorage.getItem(STORE_KEYS.TESTIMONIALS)) || [];
-    const testimonial = testimonials.find(t => t.id === id);
-    if (testimonial) showTestimonialForm(testimonial);
+async function editTestimonial(id) {
+    try {
+        const testimonial = await api(`/testimonials/${id}`);
+        if (testimonial) showTestimonialForm(testimonial);
+    } catch (error) {
+        console.error('Error loading testimonial:', error);
+        showNotification('Failed to load testimonial', true);
+    }
 }
 
-function deleteTestimonial(id) {
+async function deleteTestimonial(id) {
     if (!confirm(t('areYouSure'))) return;
 
-    let testimonials = JSON.parse(localStorage.getItem(STORE_KEYS.TESTIMONIALS)) || [];
-    testimonials = testimonials.filter(t => t.id !== id);
-    localStorage.setItem(STORE_KEYS.TESTIMONIALS, JSON.stringify(testimonials));
-    showNotification(t('successfullyDeleted'));
-    loadTestimonials();
+    try {
+        await api(`/testimonials/${id}`, { method: 'DELETE' });
+        showNotification(t('successfullyDeleted'));
+        loadTestimonials();
+    } catch (error) {
+        console.error('Error deleting testimonial:', error);
+        showNotification('Failed to delete testimonial', true);
+    }
 }
 
 // ===== CTA CONTENT =====
-function loadCTA() {
-    const cta = JSON.parse(localStorage.getItem(STORE_KEYS.CTA)) || {};
+async function loadCTA() {
+    try {
+        const cta = await api('/cta') || {};
 
-    const formHTML = `
-        <h2 data-translate="ctaContent">${t('ctaContent')}</h2>
-        <form id="ctaForm">
-            <div class="form-group">
-                <label data-translate="heading">${t('heading')}</label>
-                <input type="text" id="ctaHeading" value="${cta?.heading || ''}" required>
-            </div>
+        const formHTML = `
+            <h2 data-translate="ctaContent">${t('ctaContent')}</h2>
+            <form id="ctaForm">
+                <div class="form-group">
+                    <label data-translate="heading">${t('heading')}</label>
+                    <input type="text" id="ctaHeading" value="${escapeHTML(cta?.heading || '')}" required>
+                </div>
 
-            <div class="form-group">
-                <label data-translate="subheading">${t('subheading')}</label>
-                <input type="text" id="ctaSubheading" value="${cta?.subheading || ''}">
-            </div>
+                <div class="form-group">
+                    <label data-translate="subheading">${t('subheading')}</label>
+                    <input type="text" id="ctaSubheading" value="${escapeHTML(cta?.subheading || '')}">
+                </div>
 
-            <div class="form-group">
-                <label data-translate="text">${t('text')}</label>
-                <textarea id="ctaText">${cta?.text || ''}</textarea>
-            </div>
+                <div class="form-group">
+                    <label data-translate="text">${t('text')}</label>
+                    <textarea id="ctaText">${escapeHTML(cta?.text || '')}</textarea>
+                </div>
 
-            <div class="form-group">
-                <label data-translate="buttonText">${t('buttonText')}</label>
-                <input type="text" id="ctaButtonText" value="${cta?.button_text || ''}">
-            </div>
+                <div class="form-group">
+                    <label data-translate="buttonText">${t('buttonText')}</label>
+                    <input type="text" id="ctaButtonText" value="${escapeHTML(cta?.button_text || '')}">
+                </div>
 
-            <div class="form-group">
-                <label data-translate="backgroundImage">${t('backgroundImage')}</label>
-                <input type="file" id="ctaImage" accept="image/*">
-                ${cta && cta.image_path ? `<div class="image-preview"><img src="${cta.image_path}"></div>` : ''}
-            </div>
+                <div class="form-group">
+                    <label data-translate="backgroundImage">${t('backgroundImage')}</label>
+                    <input type="file" id="ctaImage" accept="image/*">
+                    ${cta && cta.image_path ? `<div class="image-preview"><img src="${escapeHTML(cta.image_path)}"></div>` : ''}
+                </div>
 
-            <div class="form-checkbox">
-                <input type="checkbox" id="ctaActive" ${!cta || cta.active ? 'checked' : ''}>
-                <label for="ctaActive">${t('active')}</label>
-            </div>
+                <div class="form-checkbox">
+                    <input type="checkbox" id="ctaActive" ${!cta || cta.active ? 'checked' : ''}>
+                    <label for="ctaActive">${t('active')}</label>
+                </div>
 
-            <button type="submit" class="btn-primary" data-translate="saveCTAContent">${t('saveCTAContent')}</button>
-        </form>
-    `;
+                <button type="submit" class="btn-primary" data-translate="saveCTAContent">${t('saveCTAContent')}</button>
+            </form>
+        `;
 
-    document.getElementById('ctaFormContainer').innerHTML = formHTML;
+        document.getElementById('ctaFormContainer').innerHTML = formHTML;
 
-    document.getElementById('ctaForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        await saveCTA();
-    });
+        document.getElementById('ctaForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await saveCTA();
+        });
+    } catch (error) {
+        console.error('Error loading CTA:', error);
+        showNotification('Failed to load CTA content', true);
+    }
 }
 
 async function saveCTA() {
-    let cta = JSON.parse(localStorage.getItem(STORE_KEYS.CTA)) || { id: 1 };
-
-    cta.heading = document.getElementById('ctaHeading').value;
-    cta.subheading = document.getElementById('ctaSubheading').value;
-    cta.text = document.getElementById('ctaText').value;
-    cta.button_text = document.getElementById('ctaButtonText').value;
-    cta.active = document.getElementById('ctaActive').checked ? 1 : 0;
-    cta.updated_at = new Date().toISOString();
+    const formData = new FormData();
+    formData.append('heading', document.getElementById('ctaHeading').value);
+    formData.append('subheading', document.getElementById('ctaSubheading').value);
+    formData.append('text', document.getElementById('ctaText').value);
+    formData.append('button_text', document.getElementById('ctaButtonText').value);
 
     const imageFile = document.getElementById('ctaImage').files[0];
     if (imageFile) {
-        cta.image_path = await compressImage(imageFile, 1200);
+        formData.append('image', imageFile);
     }
 
-    if (safeSetItem(STORE_KEYS.CTA, JSON.stringify(cta))) {
+    try {
+        const response = await fetch('/api/cta', {
+            method: 'PUT',
+            credentials: 'include',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to save CTA');
+        }
+
         showNotification(t('ctaContentUpdated'));
         loadCTA();
+    } catch (error) {
+        console.error('Error saving CTA:', error);
+        showNotification(error.message || 'Failed to save CTA', true);
     }
 }
 
 // ===== NEWSLETTER =====
-function loadNewsletter() {
-    const subscribers = JSON.parse(localStorage.getItem(STORE_KEYS.NEWSLETTER)) || [];
+async function loadNewsletter() {
+    try {
+        const subscribers = await api('/newsletter/subscribers');
 
-    const tableHTML = `
-        <div class="data-table">
-            <table>
-                <thead>
-                    <tr>
-                        <th data-translate="email">${t('email')}</th>
-                        <th data-translate="subscribedDate">${t('subscribedDate')}</th>
-                        <th data-translate="discountGiven">${t('discountGiven')}</th>
-                        <th data-translate="discountAmount">${t('discountAmount')}</th>
-                        <th data-translate="actions">${t('actions')}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${subscribers.map(sub => `
+        const tableHTML = `
+            <div class="data-table">
+                <table>
+                    <thead>
                         <tr>
-                            <td>${sub.email}</td>
-                            <td>${new Date(sub.subscribed_at).toLocaleDateString()}</td>
-                            <td>${sub.discount_given ? t('yes') : t('no')}</td>
-                            <td>${sub.discount_amount || 0}%</td>
-                            <td>
-                                ${!sub.discount_given ? `<button class="btn-success" onclick="giveDiscount(${sub.id})" data-translate="giveDiscount">${t('giveDiscount')}</button>` : ''}
-                                <button class="btn-danger" onclick="deleteSubscriber(${sub.id})" data-translate="delete">${t('delete')}</button>
-                            </td>
+                            <th data-translate="email">${t('email')}</th>
+                            <th data-translate="subscribedDate">${t('subscribedDate')}</th>
+                            <th data-translate="discountGiven">${t('discountGiven')}</th>
+                            <th data-translate="discountAmount">${t('discountAmount')}</th>
+                            <th data-translate="actions">${t('actions')}</th>
                         </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
+                    </thead>
+                    <tbody>
+                        ${subscribers.map(sub => `
+                            <tr>
+                                <td>${escapeHTML(sub.email)}</td>
+                                <td>${new Date(sub.subscribed_at).toLocaleDateString()}</td>
+                                <td>${sub.discount_given ? t('yes') : t('no')}</td>
+                                <td>${sub.discount_amount || 0}%</td>
+                                <td>
+                                    ${!sub.discount_given ? `<button class="btn-success" onclick="giveDiscount(${sub.id})" data-translate="giveDiscount">${t('giveDiscount')}</button>` : ''}
+                                    <button class="btn-danger" onclick="deleteSubscriber(${sub.id})" data-translate="delete">${t('delete')}</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
 
-    document.getElementById('newsletterListContainer').innerHTML = subscribers.length > 0 ? tableHTML : `<p data-translate="noSubscribers">${t('noSubscribers')}</p>`;
+        document.getElementById('newsletterListContainer').innerHTML = subscribers.length > 0 ? tableHTML : `<p data-translate="noSubscribers">${t('noSubscribers')}</p>`;
+    } catch (error) {
+        console.error('Error loading newsletter:', error);
+        showNotification('Failed to load newsletter subscribers', true);
+    }
 }
 
-function giveDiscount(id) {
+async function giveDiscount(id) {
     const discount = prompt(t('enterDiscountPercentage'));
     if (!discount) return;
 
-    const subscribers = JSON.parse(localStorage.getItem(STORE_KEYS.NEWSLETTER)) || [];
-    const idx = subscribers.findIndex(s => s.id === id);
-    if (idx !== -1) {
-        subscribers[idx].discount_given = true;
-        subscribers[idx].discount_amount = parseInt(discount);
-        localStorage.setItem(STORE_KEYS.NEWSLETTER, JSON.stringify(subscribers));
+    try {
+        await api(`/newsletter/${id}/discount`, {
+            method: 'PUT',
+            body: JSON.stringify({ discount_amount: parseInt(discount) })
+        });
         showNotification(t('discountAssigned'));
         loadNewsletter();
+    } catch (error) {
+        console.error('Error giving discount:', error);
+        showNotification('Failed to assign discount', true);
     }
 }
 
-function deleteSubscriber(id) {
+async function deleteSubscriber(id) {
     if (!confirm(t('areYouSure'))) return;
 
-    let subscribers = JSON.parse(localStorage.getItem(STORE_KEYS.NEWSLETTER)) || [];
-    subscribers = subscribers.filter(s => s.id !== id);
-    localStorage.setItem(STORE_KEYS.NEWSLETTER, JSON.stringify(subscribers));
-    showNotification(t('successfullyDeleted'));
-    loadNewsletter();
+    try {
+        await api(`/newsletter/${id}`, { method: 'DELETE' });
+        showNotification(t('successfullyDeleted'));
+        loadNewsletter();
+    } catch (error) {
+        console.error('Error deleting subscriber:', error);
+        showNotification('Failed to delete subscriber', true);
+    }
 }
 
 // ===== ORDERS =====
-function loadOrders() {
-    const filter = document.getElementById('orderStatusFilter').value;
-    let orders = JSON.parse(localStorage.getItem(STORE_KEYS.ORDERS)) || [];
+async function loadOrders() {
+    try {
+        const filter = document.getElementById('orderStatusFilter').value;
+        let orders = await api('/orders');
 
-    if (filter) {
-        orders = orders.filter(o => o.status === filter);
-    }
+        if (filter) {
+            orders = orders.filter(o => o.status === filter);
+        }
 
-    const tableHTML = `
-        <div class="data-table">
-            <table>
-                <thead>
-                    <tr>
-                        <th data-translate="orderNumber">${t('orderNumber')}</th>
-                        <th data-translate="customer">${t('customer')}</th>
-                        <th data-translate="email">${t('email')}</th>
-                        <th data-translate="date">${t('date')}</th>
-                        <th data-translate="total">${t('total')}</th>
-                        <th data-translate="status">${t('status')}</th>
-                        <th data-translate="actions">${t('actions')}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${orders.map(order => `
+        const tableHTML = `
+            <div class="data-table">
+                <table>
+                    <thead>
                         <tr>
-                            <td>${order.order_number}</td>
-                            <td>${order.customer_data?.firstName || ''} ${order.customer_data?.lastName || ''}</td>
-                            <td>${order.customer_data?.email || ''}</td>
-                            <td>${new Date(order.created_at).toLocaleDateString()}</td>
-                            <td>${order.total} BAM</td>
-                            <td><span class="status-badge status-${order.status}" data-translate="${order.status}">${t(order.status)}</span></td>
-                            <td>
-                                <button class="btn-success" onclick="viewOrder(${order.id})" data-translate="view">${t('view')}</button>
-                                <button class="btn-primary" onclick="updateOrderStatus(${order.id}, '${order.status}')" data-translate="updateStatus">${t('updateStatus')}</button>
-                            </td>
+                            <th data-translate="orderNumber">${t('orderNumber')}</th>
+                            <th data-translate="customer">${t('customer')}</th>
+                            <th data-translate="email">${t('email')}</th>
+                            <th data-translate="date">${t('date')}</th>
+                            <th data-translate="total">${t('total')}</th>
+                            <th data-translate="status">${t('status')}</th>
+                            <th data-translate="actions">${t('actions')}</th>
                         </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
+                    </thead>
+                    <tbody>
+                        ${orders.map(order => `
+                            <tr>
+                                <td>${escapeHTML(order.order_number)}</td>
+                                <td>${escapeHTML(order.customer_name || '')}</td>
+                                <td>${escapeHTML(order.customer_email || '')}</td>
+                                <td>${new Date(order.created_at).toLocaleDateString()}</td>
+                                <td>${order.total} BAM</td>
+                                <td><span class="status-badge status-${order.status}" data-translate="${order.status}">${t(order.status)}</span></td>
+                                <td>
+                                    <button class="btn-success" onclick="viewOrder(${order.id})" data-translate="view">${t('view')}</button>
+                                    <button class="btn-primary" onclick="updateOrderStatus(${order.id}, '${order.status}')" data-translate="updateStatus">${t('updateStatus')}</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
 
-    document.getElementById('ordersListContainer').innerHTML = orders.length > 0 ? tableHTML : `<p data-translate="noOrdersFound">${t('noOrdersFound')}</p>`;
+        document.getElementById('ordersListContainer').innerHTML = orders.length > 0 ? tableHTML : `<p data-translate="noOrdersFound">${t('noOrdersFound')}</p>`;
+    } catch (error) {
+        console.error('Error loading orders:', error);
+        showNotification('Failed to load orders', true);
+    }
 }
 
 // Event listener attached in setupEventListeners()
 
-function viewOrder(id) {
-    const orders = JSON.parse(localStorage.getItem(STORE_KEYS.ORDERS)) || [];
-    const order = orders.find(o => o.id === id);
-    if (!order) return;
+async function viewOrder(id) {
+    try {
+        const order = await api(`/orders/${id}`);
+        if (!order) return;
 
-    const modalHTML = `
-        <h2>${t('orderDetails')} - ${order.order_number}</h2>
-        <div>
-            <h3>${t('customerInformation')}</h3>
-            <p><strong>${t('name')}:</strong> ${order.customer_data?.firstName || ''} ${order.customer_data?.lastName || ''}</p>
-            <p><strong>${t('email')}:</strong> ${order.customer_data?.email || ''}</p>
-            <p><strong>${t('phone')}:</strong> ${order.customer_data?.phone || ''}</p>
-            <p><strong>${t('address')}:</strong> ${order.customer_data?.address || ''}, ${order.customer_data?.city || ''} ${order.customer_data?.zipCode || ''}</p>
+        const modalHTML = `
+            <h2>${t('orderDetails')} - ${escapeHTML(order.order_number)}</h2>
+            <div>
+                <h3>${t('customerInformation')}</h3>
+                <p><strong>${t('name')}:</strong> ${escapeHTML(order.customer_name || '')}</p>
+                <p><strong>${t('email')}:</strong> ${escapeHTML(order.customer_email || '')}</p>
+                <p><strong>${t('phone')}:</strong> ${escapeHTML(order.customer_phone || '')}</p>
+                <p><strong>${t('address')}:</strong> ${escapeHTML(order.shipping_address || '')}</p>
 
-            <h3>${t('orderItems')}</h3>
-            ${(order.items || []).map(item => `
-                <p>${item.title} x ${item.quantity} - ${(parseFloat(item.price) * item.quantity).toFixed(2)} BAM</p>
-            `).join('')}
+                <h3>${t('orderSummary')}</h3>
+                <p><strong>${t('total')}:</strong> ${order.total} BAM</p>
+                <p><strong>${t('status')}:</strong> <span class="status-badge status-${order.status}">${t(order.status)}</span></p>
+                <p><strong>${t('orderDate')}:</strong> ${new Date(order.created_at).toLocaleString()}</p>
+            </div>
+        `;
 
-            <h3>${t('orderSummary')}</h3>
-            <p><strong>${t('subtotal')}:</strong> ${order.subtotal} BAM</p>
-            <p><strong>${t('shipping')}:</strong> ${order.shipping} BAM</p>
-            <p><strong>${t('tax')}:</strong> ${order.tax} BAM</p>
-            <p><strong>${t('total')}:</strong> ${order.total} BAM</p>
-            <p><strong>${t('status')}:</strong> <span class="status-badge status-${order.status}">${t(order.status)}</span></p>
-            <p><strong>${t('orderDate')}:</strong> ${new Date(order.created_at).toLocaleString()}</p>
-        </div>
-    `;
-
-    openModal(modalHTML);
+        openModal(modalHTML);
+    } catch (error) {
+        console.error('Error loading order:', error);
+        showNotification('Failed to load order details', true);
+    }
 }
 
-function updateOrderStatus(id, currentStatus) {
+async function updateOrderStatus(id, currentStatus) {
     const statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 
     const modalHTML = `
@@ -1793,18 +1850,21 @@ function updateOrderStatus(id, currentStatus) {
 
     openModal(modalHTML);
 
-    document.getElementById('statusForm').addEventListener('submit', (e) => {
+    document.getElementById('statusForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const newStatus = document.getElementById('newStatus').value;
 
-        const orders = safeJsonParse(localStorage.getItem(STORE_KEYS.ORDERS), []);
-        const idx = orders.findIndex(o => o.id === id);
-        if (idx !== -1) {
-            orders[idx].status = newStatus;
-            localStorage.setItem(STORE_KEYS.ORDERS, JSON.stringify(orders));
+        try {
+            await api(`/orders/${id}/status`, {
+                method: 'PUT',
+                body: { status: newStatus }
+            });
             showNotification(t('orderStatusUpdated'));
             closeModal();
             loadOrders();
+        } catch (error) {
+            console.error('Error updating order status:', error);
+            showNotification('Failed to update order status', true);
         }
     });
 }
