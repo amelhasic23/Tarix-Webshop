@@ -30,7 +30,7 @@ const loginLimiter = rateLimit({
 
 // CORS
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production' ? false : true,
+    origin: true,
     credentials: true
 }));
 
@@ -61,6 +61,7 @@ app.use('/api', (req, res, next) => {
 // Serve static files
 app.use(express.static(path.join(__dirname)));
 app.use('/Images', express.static(path.join(__dirname, 'Images')));
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use('/admin', express.static(path.join(__dirname, 'admin')));
 
 // Import routes
@@ -118,9 +119,11 @@ app.use((req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`\n🚀 Tarix WebShop Server Running`);
-    console.log(`📍 Main Site: http://localhost:${PORT}`);
-    console.log(`🔐 Admin Panel: http://localhost:${PORT}/admin/login`);
+    console.log(`\n🛒 Tarix WebShop Server Running`);
+    console.log(`───────────────────────────────────`);
+    console.log(`📍 Store:  http://localhost:${PORT}`);
+    console.log(`🔐 Admin:  http://localhost:${PORT}/admin/login`);
+    console.log(`───────────────────────────────────`);
     console.log(`⚙️  Environment: ${process.env.NODE_ENV || 'development'}\n`);
 });
 
