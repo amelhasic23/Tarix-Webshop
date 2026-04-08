@@ -4,49 +4,27 @@ const loginBtn = document.getElementById('loginBtn');
 const loginText = document.getElementById('loginText');
 const loginLoader = document.getElementById('loginLoader');
 
-// Storage keys (must match dashboard.js)
-const STORE_KEYS = {
-    ADMIN_USER: 'tarix_admin_user',
-    ADMIN_SESSION: 'tarix_admin_session'
-};
-
-// Hash password using SHA-256
-async function hashPassword(password) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(hashBuffer))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
-}
-
-// Seed default admin if none exists
-async function seedDefaultAdmin() {
-    const adminUser = localStorage.getItem(STORE_KEYS.ADMIN_USER);
-    if (!adminUser) {
-        const hashedPassword = await hashPassword('admin123');
-        localStorage.setItem(STORE_KEYS.ADMIN_USER, JSON.stringify({
-            username: 'admin',
-            password: hashedPassword,
-            created_at: new Date().toISOString()
-        }));
-        // Default admin seeded (credentials not logged for security)
-    }
-}
+// API Base URL - same origin since served from same server
+const API_BASE = '/api';
 
 // Check if already logged in
-function checkExistingSession() {
-    const session = JSON.parse(localStorage.getItem(STORE_KEYS.ADMIN_SESSION));
-    if (session && session.username && Date.now() < session.expiresAt) {
-        window.location.href = 'dashboard.html';
+async function checkExistingSession() {
+    try {
+        const response = await fetch(`${API_BASE}/auth/check`, {
+            credentials: 'include'
+        });
+        const data = await response.json();
+
+        if (data.authenticated) {
+            window.location.href = 'dashboard.html';
+        }
+    } catch (error) {
+        console.error('Session check error:', error);
     }
 }
 
 // Initialize
-(async function init() {
-    await seedDefaultAdmin();
-    checkExistingSession();
-})();
+checkExistingSession();
 
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -64,25 +42,25 @@ loginForm.addEventListener('submit', async (e) => {
     loginLoader.style.display = 'block';
 
     try {
-        const adminUser = JSON.parse(localStorage.getItem(STORE_KEYS.ADMIN_USER));
-        const hashedInput = await hashPassword(password);
+        const response = await fetch(`${API_BASE}/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ username, password })
+        });
 
-        if (adminUser && adminUser.username === username && adminUser.password === hashedInput) {
-            // Login successful - create session
-            const session = {
-                username: username,
-                loginTime: Date.now(),
-                expiresAt: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
-            };
-            localStorage.setItem(STORE_KEYS.ADMIN_SESSION, JSON.stringify(session));
+        const data = await response.json();
 
-            // Redirect after short delay
+        if (response.ok && data.success) {
+            // Login successful - redirect to dashboard
             setTimeout(() => {
                 window.location.href = 'dashboard.html';
             }, 100);
         } else {
             // Login failed
-            errorMessage.textContent = 'Invalid username or password.';
+            errorMessage.textContent = data.error || 'Invalid username or password.';
             errorMessage.classList.add('show');
 
             // Reset button

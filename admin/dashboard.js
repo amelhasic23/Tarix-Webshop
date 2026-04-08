@@ -1,4 +1,33 @@
-// ===== LOCALSTORAGE KEYS =====
+// ===== API CONFIGURATION =====
+const API_BASE = '/api';
+
+// API Helper function
+async function api(endpoint, options = {}) {
+    const url = `${API_BASE}${endpoint}`;
+    const config = {
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        },
+        ...options
+    };
+
+    if (options.body && typeof options.body === 'object') {
+        config.body = JSON.stringify(options.body);
+    }
+
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || 'API request failed');
+    }
+
+    return data;
+}
+
+// ===== LOCALSTORAGE KEYS (kept for backward compatibility) =====
 const STORE_KEYS = {
     ADMIN_USER: 'tarix_admin_user',
     ADMIN_SESSION: 'tarix_admin_session',
@@ -403,22 +432,22 @@ async function hashPassword(password) {
         .join('');
 }
 
-// ===== AUTH CHECK (localStorage based) =====
+// ===== AUTH CHECK (server API based) =====
 async function checkAuth() {
-    console.log('[Admin] Checking auth...');
+    console.log('[Admin] Checking auth via server API...');
     try {
-        const session = JSON.parse(localStorage.getItem(STORE_KEYS.ADMIN_SESSION));
+        const data = await api('/auth/check');
 
-        if (!session || !session.username || Date.now() > session.expiresAt) {
-            console.log('[Admin] No valid session, redirecting to login');
+        if (!data.authenticated) {
+            console.log('[Admin] Not authenticated, redirecting to login');
             window.location.href = 'login.html';
             return;
         }
 
-        console.log('[Admin] Valid session for:', session.username);
+        console.log('[Admin] Authenticated as:', data.admin.username);
         // Valid session - show admin username and init
         const usernameEl = document.getElementById('adminUsername');
-        if (usernameEl) usernameEl.textContent = session.username;
+        if (usernameEl) usernameEl.textContent = data.admin.username;
         init();
     } catch (error) {
         console.error('[Admin] Auth check error:', error);
@@ -814,9 +843,13 @@ function closeModal() {
 function setupLogout() {
     const logoutBtn = document.querySelector('.logout-btn');
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', (e) => {
+        logoutBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            localStorage.removeItem(STORE_KEYS.ADMIN_SESSION);
+            try {
+                await api('/auth/logout', { method: 'POST' });
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
             window.location.href = 'login.html';
         });
     }
@@ -1208,18 +1241,19 @@ function deleteCategory(id) {
 }
 
 // ===== PRODUCTS =====
-function loadProducts() {
-    const products = JSON.parse(localStorage.getItem(STORE_KEYS.PRODUCTS)) || [];
-    const categories = JSON.parse(localStorage.getItem(STORE_KEYS.CATEGORIES)) || [];
+async function loadProducts() {
+    try {
+        const products = await api('/products');
+        const categories = await api('/categories');
 
-    const productsHTML = products.map(product => {
-        const category = categories.find(c => c.id === product.category_id);
-        return `
+        const productsHTML = products.map(product => {
+            const category = categories.find(c => c.id === product.category_id);
+            return `
             <div class="item-card">
-                <img src="${product.image_path}" alt="${product.name}">
+                <img src="${product.image_path}" alt="${escapeHTML(product.name)}">
                 <div class="item-card-content">
-                    <h3>${product.name}</h3>
-                    <p><strong>Category:</strong> ${category?.name || 'Uncategorized'}</p>
+                    <h3>${escapeHTML(product.name)}</h3>
+                    <p><strong>Category:</strong> ${escapeHTML(category?.name || 'Uncategorized')}</p>
                     <p><strong>Price:</strong> ${product.price} BAM ${product.old_price ? `<del>${product.old_price} BAM</del>` : ''}</p>
                     <p><strong>Stock:</strong> ${product.stock}</p>
                     <p>${product.best_seller ? '<span class="status-badge status-delivered">Best Seller</span>' : ''} ${product.featured ? '<span class="status-badge status-processing">Featured</span>' : ''}</p>
@@ -1230,9 +1264,13 @@ function loadProducts() {
                 </div>
             </div>
         `;
-    }).join('');
+        }).join('');
 
-    document.getElementById('productsListContainer').innerHTML = productsHTML || '<p>No products found.</p>';
+        document.getElementById('productsListContainer').innerHTML = productsHTML || '<p>No products found.</p>';
+    } catch (error) {
+        console.error('Error loading products:', error);
+        showNotification('Failed to load products', true);
+    }
 }
 
 // Event listener attached in setupEventListeners()
@@ -1315,48 +1353,48 @@ function showProductForm(product = null) {
 
 async function saveProduct() {
     const productId = document.getElementById('productId').value;
-    const products = JSON.parse(localStorage.getItem(STORE_KEYS.PRODUCTS)) || [];
 
-    const productData = {
-        name: document.getElementById('productName').value,
-        category_id: document.getElementById('productCategory').value ? parseInt(document.getElementById('productCategory').value) : null,
-        price: parseFloat(document.getElementById('productPrice').value),
-        old_price: document.getElementById('productOldPrice').value ? parseFloat(document.getElementById('productOldPrice').value) : null,
-        discount_percentage: parseInt(document.getElementById('productDiscount').value) || 0,
-        description: document.getElementById('productDescription').value,
-        stock: parseInt(document.getElementById('productStock').value),
-        featured: document.getElementById('productFeatured').checked ? 1 : 0,
-        best_seller: document.getElementById('productBestSeller').checked ? 1 : 0
-    };
+    const formData = new FormData();
+    formData.append('name', document.getElementById('productName').value);
+    formData.append('category_id', document.getElementById('productCategory').value || '');
+    formData.append('price', document.getElementById('productPrice').value);
+    formData.append('old_price', document.getElementById('productOldPrice').value || '');
+    formData.append('discount_percentage', document.getElementById('productDiscount').value || '0');
+    formData.append('description', document.getElementById('productDescription').value || '');
+    formData.append('stock', document.getElementById('productStock').value || '0');
+    formData.append('featured', document.getElementById('productFeatured').checked ? '1' : '0');
+    formData.append('best_seller', document.getElementById('productBestSeller').checked ? '1' : '0');
 
     const imageFile = document.getElementById('productImage').files[0];
     if (imageFile) {
-        productData.image_path = await compressImage(imageFile, 600);
+        formData.append('image', imageFile);
+    } else if (!productId) {
+        showNotification('Please select an image', true);
+        return;
     }
 
-    if (productId) {
-        // Update existing
-        const idx = products.findIndex(p => p.id === parseInt(productId));
-        if (idx !== -1) {
-            products[idx] = { ...products[idx], ...productData };
-        }
-    } else {
-        // Create new
-        productData.id = Date.now();
-        productData.rating = 5;
-        productData.created_at = new Date().toISOString();
-        if (!productData.image_path) {
-            showNotification('Please select an image', true);
-            return;
-        }
-        products.push(productData);
-    }
+    try {
+        const url = productId ? `/api/products/${productId}` : '/api/products';
+        const method = productId ? 'PUT' : 'POST';
 
-    if (safeSetItem(STORE_KEYS.PRODUCTS, JSON.stringify(products))) {
+        const response = await fetch(url, {
+            method: method,
+            credentials: 'include',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to save product');
+        }
+
         showNotification(t('successfullySaved'));
         closeModal();
         loadProducts();
-        updateCategoryProductCounts();
+    } catch (error) {
+        console.error('Error saving product:', error);
+        showNotification(error.message || 'Failed to save product', true);
     }
 }
 
@@ -1372,21 +1410,27 @@ function updateCategoryProductCounts() {
     categoriesCache = categories;
 }
 
-function editProduct(id) {
-    const products = JSON.parse(localStorage.getItem(STORE_KEYS.PRODUCTS)) || [];
-    const product = products.find(p => p.id === id);
-    if (product) showProductForm(product);
+async function editProduct(id) {
+    try {
+        const product = await api(`/products/${id}`);
+        if (product) showProductForm(product);
+    } catch (error) {
+        console.error('Error loading product:', error);
+        showNotification('Failed to load product', true);
+    }
 }
 
-function deleteProduct(id) {
+async function deleteProduct(id) {
     if (!confirm(t('areYouSure'))) return;
 
-    let products = JSON.parse(localStorage.getItem(STORE_KEYS.PRODUCTS)) || [];
-    products = products.filter(p => p.id !== id);
-    localStorage.setItem(STORE_KEYS.PRODUCTS, JSON.stringify(products));
-    showNotification(t('successfullyDeleted'));
-    loadProducts();
-    updateCategoryProductCounts();
+    try {
+        await api(`/products/${id}`, { method: 'DELETE' });
+        showNotification(t('successfullyDeleted'));
+        loadProducts();
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        showNotification('Failed to delete product', true);
+    }
 }
 
 // ===== TESTIMONIALS =====
