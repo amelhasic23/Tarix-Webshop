@@ -3161,6 +3161,21 @@ footer {
   color: inherit;
 }
 
+.admin-link {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--sonic-silver);
+  font-size: var(--fs-9);
+  text-decoration: none;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.admin-link:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
 
 
 

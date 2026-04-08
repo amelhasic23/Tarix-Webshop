@@ -413,6 +413,7 @@ const translations = {
 
         // Copyright
         copyright: "Copyright © 2026 Tarix. All rights reserved.",
+        adminPanel: "Admin Panel",
 
         // Auth & User
         login: "Login",
@@ -725,6 +726,7 @@ const translations = {
 
         // Copyright
         copyright: "Copyright © 2026 Tarix. Alle Rechte vorbehalten.",
+        adminPanel: "Admin-Bereich",
 
         // Auth & User
         login: "Anmelden",
@@ -1037,6 +1039,7 @@ const translations = {
 
         // Copyright
         copyright: "Copyright © 2026 Tarix. Sva prava zadržana.",
+        adminPanel: "Admin Panel",
 
         // Auth & User
         login: "Prijava",
