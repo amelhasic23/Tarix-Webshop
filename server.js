@@ -1,30 +1,19 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
+const path = require('path');
 
-// Try SQLite session store, fallback to file store
-let sessionStore;
-try {
-    const SQLiteStore = require('connect-sqlite3')(session);
-    sessionStore = new SQLiteStore({
-        db: 'sessions.sqlite',
-        dir: path.join(__dirname, 'database'),
-        table: 'sessions'
-    });
-    console.log('✅ Using SQLite session store');
-} catch (error) {
-    console.warn('⚠️  SQLite session store failed, using file store:', error.message);
-    const FileStore = require('session-file-store')(session);
-    sessionStore = new FileStore({
-        path: path.join(__dirname, 'database', 'sessions'),
-        ttl: 86400, // 24 hours
-        retries: 0
-    });
-}
+// Use file-based session store (no native modules)
+const FileStore = require('session-file-store')(session);
+const sessionStore = new FileStore({
+    path: path.join(__dirname, 'database', 'sessions'),
+    ttl: 86400, // 24 hours
+    retries: 0
+});
+console.log('✅ Using file session store');
 
 const cors = require('cors');
 const helmet = require('helmet');
-const path = require('path');
 const rateLimit = require('express-rate-limit');
 
 const app = express();

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const { get, run } = require('../database/db');
 const { isAuthenticated, isNotAuthenticated } = require('../middleware/auth');
 

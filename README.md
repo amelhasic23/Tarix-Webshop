@@ -216,6 +216,30 @@ npm start
 
 This is by design. Products with zero stock are now shown with "Out of Stock" labels (after recent fixes). If you still don't see them, clear your browser cache.
 
+### GLIBC_2.38 errors / Native module issues
+
+**Cause**: Native modules (sqlite3, bcrypt) compiled for newer systems than deployment environment.
+
+**Solutions**:
+
+**Option 1 - Use specific Node.js version:**
+In Render environment variables, set:
+```
+NODE_VERSION=18.20.4
+NPM_CONFIG_BUILD_FROM_SOURCE=true
+```
+
+**Option 2 - Use build script:**
+In Render settings:
+- **Build Command**: `bash build.sh`
+- **Start Command**: `npm start`
+
+**Option 3 - Force rebuild:**
+Change Build Command to:
+```bash
+npm install && npm rebuild sqlite3 bcrypt && npm run seed
+```
+
 ### Environment variable errors
 
 Make sure you have a `.env` file in the root directory with all required variables:

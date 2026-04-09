@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const { run, get } = require('./db');
 require('dotenv').config();
 
