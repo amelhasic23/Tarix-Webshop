@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
+const SQLiteStore = require('connect-sqlite3')(session);
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
@@ -8,6 +9,11 @@ const rateLimit = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Trust proxy - required for secure cookies behind Render's reverse proxy
+if (process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+}
 
 // Security middleware
 app.use(helmet({
@@ -29,24 +35,47 @@ const loginLimiter = rateLimit({
 });
 
 // CORS
+const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:10000',
+    'https://tarix-shop.onrender.com'
+];
+
 app.use(cors({
-    origin: true,
-    credentials: true
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Session middleware
+// Session middleware with SQLite store for persistence
 app.use(session({
+    store: new SQLiteStore({
+        db: 'sessions.sqlite',
+        dir: path.join(__dirname, 'database'),
+        table: 'sessions'
+    }),
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
     resave: false,
     saveUninitialized: false,
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: 'lax' // Same domain, so 'lax' works for both dev and prod
     }
 }));
 
@@ -119,12 +148,16 @@ app.use((req, res) => {
 
 // Start server
 app.listen(PORT, () => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const baseUrl = isProduction ? 'https://tarix-shop.onrender.com' : `http://localhost:${PORT}`;
+
     console.log(`\n🛒 Tarix WebShop Server Running`);
     console.log(`───────────────────────────────────`);
-    console.log(`📍 Store:  http://localhost:${PORT}`);
-    console.log(`🔐 Admin:  http://localhost:${PORT}/admin/login`);
+    console.log(`📍 Store:  ${baseUrl}`);
+    console.log(`🔐 Admin:  ${baseUrl}/admin/login`);
     console.log(`───────────────────────────────────`);
-    console.log(`⚙️  Environment: ${process.env.NODE_ENV || 'development'}\n`);
+    console.log(`⚙️  Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌐 Port:       ${PORT}\n`);
 });
 
 // Graceful shutdown

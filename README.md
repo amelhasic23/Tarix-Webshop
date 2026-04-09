@@ -43,8 +43,8 @@ A modern, multilingual e-commerce platform built with vanilla JavaScript, HTML, 
 ## 🚀 Getting Started
 
 ### Prerequisites
+- Node.js 18+ (required for backend server)
 - Modern web browser (Chrome, Firefox, Safari, Edge)
-- Node.js (for development dependencies only)
 
 ### Installation
 
@@ -54,27 +54,46 @@ A modern, multilingual e-commerce platform built with vanilla JavaScript, HTML, 
    cd Tarix-Webshop
    ```
 
-2. **Install dependencies** (optional, for development tools)
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-3. **Configure EmailJS** (for order confirmation emails)
-   - Create a free account at [EmailJS](https://www.emailjs.com/)
+3. **Set up environment variables**
    - Copy `.env.example` to `.env`
-   - Add your EmailJS credentials:
+   - Update the values:
+     ```env
+     NODE_ENV=production
+     PORT=10000
+     SESSION_SECRET=your-random-secret-key-here
      ```
-     EMAILJS_SERVICE_ID=your_service_id
-     EMAILJS_TEMPLATE_ID=your_template_id
-     EMAILJS_PUBLIC_KEY=your_public_key
+   - Generate a secure SESSION_SECRET:
+     ```bash
+     node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
      ```
 
-4. **Open in browser**
-   - Simply open `index.html` in your browser
-   - Or use a local server:
-     ```bash
-     npx serve
-     ```
+4. **Initialize the database**
+   ```bash
+   npm run seed
+   ```
+   This creates the SQLite database with an admin user and sample data.
+
+   **Default admin credentials:**
+   - Username: `admin`
+   - Password: `admin123`
+
+   ⚠️ **Change these immediately in production!**
+
+5. **Start the server**
+   ```bash
+   npm start
+   ```
+
+6. **Access the application**
+   - **Main Store**: http://localhost:10000
+   - **Admin Dashboard**: http://localhost:10000/admin/login
+
+⚠️ **IMPORTANT**: Do NOT open `index.html` directly in your browser (file:// protocol). The application requires the server to be running for API calls to work. If you see a red warning banner at the top of the page, it means you're accessing the site incorrectly.
 
 ## 📁 Project Structure
 
@@ -157,6 +176,54 @@ This project implements modern security best practices:
 - No sensitive data in localStorage (passwords are hashed)
 
 **Note**: This is a frontend-only demo. For production use, implement a proper backend with server-side validation and authentication.
+
+## 🐛 Troubleshooting
+
+### Changes in admin don't appear on main site
+
+**Cause**: You're opening `index.html` directly via file:// instead of through the server.
+
+**Solution**:
+1. Make sure the server is running: `npm start`
+2. Visit http://localhost:10000 (NOT file://...)
+3. Check browser console for error messages
+4. Look for the red warning banner at the top
+
+### Admin login redirects immediately / Session expires
+
+**Cause**: Session cookie configuration issues.
+
+**Solution**:
+- Ensure the server is running with `npm start`
+- Check that `SESSION_SECRET` is set in `.env`
+- Verify `database/sessions.sqlite` exists
+- Clear browser cookies and try again
+
+### API calls failing / "Is the server running?" warnings
+
+**Cause**: Server is not running or not accessible.
+
+**Solution**:
+```bash
+# Check if server is running
+curl http://localhost:10000/api/public/products
+
+# If no response, start the server
+npm start
+```
+
+### Products with stock=0 not visible on main site
+
+This is by design. Products with zero stock are now shown with "Out of Stock" labels (after recent fixes). If you still don't see them, clear your browser cache.
+
+### Environment variable errors
+
+Make sure you have a `.env` file in the root directory with all required variables:
+```env
+NODE_ENV=production
+PORT=10000
+SESSION_SECRET=your-secret-key-here
+```
 
 ## 📄 Documentation
 

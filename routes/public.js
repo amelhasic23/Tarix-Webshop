@@ -28,7 +28,7 @@ router.get('/categories', async (req, res) => {
 router.get('/products', async (req, res) => {
     try {
         const { category, featured, best_seller, limit } = req.query;
-        let query = 'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.stock > 0';
+        let query = 'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE 1=1';
         const params = [];
 
         if (category) {
@@ -65,7 +65,7 @@ router.get('/products', async (req, res) => {
 router.get('/bestsellers', async (req, res) => {
     try {
         const { limit } = req.query;
-        let query = 'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.best_seller = 1 AND p.stock > 0 ORDER BY p.id DESC';
+        let query = 'SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.best_seller = 1 ORDER BY p.id DESC';
 
         if (limit) {
             query += ' LIMIT ?';

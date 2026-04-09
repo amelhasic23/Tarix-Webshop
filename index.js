@@ -1771,7 +1771,6 @@ function renderCheckoutModal() {
 
         const formData = new FormData(form);
         const orderData = {
-            orderNumber: 'ORD-' + Date.now(),
             customer: {
                 firstName: formData.get('firstName'),
                 lastName: formData.get('lastName'),
@@ -1782,32 +1781,69 @@ function renderCheckoutModal() {
                 zipCode: formData.get('zipCode')
             },
             items: cart,
-            subtotal: subtotal.toFixed(2),
-            shipping: shipping.toFixed(2),
-            tax: tax.toFixed(2),
-            total: total.toFixed(2),
-            date: new Date().toLocaleString()
+            subtotal: parseFloat(subtotal.toFixed(2)),
+            shipping: parseFloat(shipping.toFixed(2)),
+            tax: parseFloat(tax.toFixed(2)),
+            total: parseFloat(total.toFixed(2))
         };
 
-        // Save order to localStorage for admin panel
-        const orders = JSON.parse(localStorage.getItem('tarix_orders') || '[]');
-        orders.push({
-            id: Date.now(),
-            order_number: orderData.orderNumber,
-            customer_data: orderData.customer,
-            items: orderData.items,
-            subtotal: orderData.subtotal,
-            shipping: orderData.shipping,
-            tax: orderData.tax,
-            total: orderData.total,
-            status: 'pending',
-            created_at: new Date().toISOString()
-        });
-        localStorage.setItem('tarix_orders', JSON.stringify(orders));
+        let orderNumber = 'ORD-' + Date.now();
+
+        // Save order to server API
+        try {
+            const response = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                orderNumber = data.order_number;
+                console.log('[Main] Order saved to server:', orderNumber);
+            } else {
+                console.error('[Main] Order API error:', data.error);
+                // Fallback to localStorage
+                const orders = JSON.parse(localStorage.getItem('tarix_orders') || '[]');
+                orders.push({
+                    id: Date.now(),
+                    order_number: orderNumber,
+                    customer_data: orderData.customer,
+                    items: orderData.items,
+                    subtotal: orderData.subtotal,
+                    shipping: orderData.shipping,
+                    tax: orderData.tax,
+                    total: orderData.total,
+                    status: 'pending',
+                    created_at: new Date().toISOString()
+                });
+                localStorage.setItem('tarix_orders', JSON.stringify(orders));
+                console.log('[Main] Order saved to localStorage (API error)');
+            }
+        } catch (error) {
+            console.error('[Main] Order fetch error:', error);
+            // Fallback to localStorage if server is not available
+            const orders = JSON.parse(localStorage.getItem('tarix_orders') || '[]');
+            orders.push({
+                id: Date.now(),
+                order_number: orderNumber,
+                customer_data: orderData.customer,
+                items: orderData.items,
+                subtotal: orderData.subtotal,
+                shipping: orderData.shipping,
+                tax: orderData.tax,
+                total: orderData.total,
+                status: 'pending',
+                created_at: new Date().toISOString()
+            });
+            localStorage.setItem('tarix_orders', JSON.stringify(orders));
+            console.log('[Main] Order saved to localStorage (server unavailable)');
+        }
 
         // Send email using EmailJS (wrapped in try-catch so order still completes)
         try {
-            await sendOrderEmail(orderData);
+            await sendOrderEmail({ ...orderData, orderNumber, date: new Date().toLocaleString() });
         } catch (emailError) {
             console.warn('Email notification failed, but order was placed:', emailError);
         }
@@ -1815,7 +1851,7 @@ function renderCheckoutModal() {
         setButtonLoading(submitBtn, false);
 
         // Show success notification
-        showNotification(`Order ${sanitizeHTML(orderData.orderNumber)} placed successfully! Check your email for confirmation.`);
+        showNotification(`Order ${sanitizeHTML(orderNumber)} placed successfully! Check your email for confirmation.`);
 
         // Clear cart
         cart = [];
@@ -2091,7 +2127,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (inlineNewsletterForm && inlineNewsletterInput) {
         console.log('[Main] Inline newsletter form found, attaching handler');
 
-        inlineNewsletterForm.addEventListener('submit', function(e) {
+        inlineNewsletterForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             console.log('[Main] Newsletter form submitted');
 
@@ -2107,29 +2143,116 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Check for duplicates
-            const subscribers = JSON.parse(localStorage.getItem('tarix_newsletter') || '[]');
-            if (subscribers.some(s => s.email.toLowerCase() === email.toLowerCase())) {
-                showNotification(translations[currentLanguage]?.alreadySubscribed || 'This email is already subscribed', 'error');
-                return;
+            // Save to server API
+            try {
+                const response = await fetch('/api/newsletter/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showNotification(data.error || 'Subscription failed', 'error');
+                    return;
+                }
+
+                console.log('[Main] Newsletter subscriber saved to server:', email);
+                inlineNewsletterInput.value = '';
+                showNotification(translations[currentLanguage]?.subscribeSuccess || 'Successfully subscribed! Check your email for 15% discount code.', 'success');
+            } catch (error) {
+                console.error('[Main] Newsletter API error:', error);
+                // Fallback to localStorage if server is not available
+                const subscribers = JSON.parse(localStorage.getItem('tarix_newsletter') || '[]');
+                if (subscribers.some(s => s.email.toLowerCase() === email.toLowerCase())) {
+                    showNotification(translations[currentLanguage]?.alreadySubscribed || 'This email is already subscribed', 'error');
+                    return;
+                }
+                subscribers.push({
+                    id: Date.now(),
+                    email: email,
+                    subscribed_at: new Date().toISOString(),
+                    discount_given: false,
+                    discount_amount: 0
+                });
+                localStorage.setItem('tarix_newsletter', JSON.stringify(subscribers));
+                console.log('[Main] Newsletter saved to localStorage (server unavailable)');
+                inlineNewsletterInput.value = '';
+                showNotification(translations[currentLanguage]?.subscribeSuccess || 'Successfully subscribed! Check your email for 15% discount code.', 'success');
             }
-
-            // Save new subscriber
-            subscribers.push({
-                id: Date.now(),
-                email: email,
-                subscribed_at: new Date().toISOString(),
-                discount_given: false,
-                discount_amount: 0
-            });
-            localStorage.setItem('tarix_newsletter', JSON.stringify(subscribers));
-            console.log('[Main] Newsletter subscriber saved:', email);
-
-            inlineNewsletterInput.value = '';
-            showNotification(translations[currentLanguage]?.subscribeSuccess || 'Successfully subscribed! Check your email for 15% discount code.', 'success');
         });
     } else {
         console.log('[Main] Inline newsletter form not found');
+    }
+
+    // Modal newsletter form (popup)
+    const modalNewsletterForm = document.querySelector('[data-modal] form');
+    const modalNewsletterInput = document.querySelector('[data-modal] .email-field');
+
+    if (modalNewsletterForm && modalNewsletterInput) {
+        console.log('[Main] Modal newsletter form found, attaching handler');
+
+        modalNewsletterForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            console.log('[Main] Modal newsletter form submitted');
+
+            const email = modalNewsletterInput.value.trim();
+
+            if (!email) {
+                showNotification(translations[currentLanguage]?.enterEmail || 'Please enter your email address', 'error');
+                return;
+            }
+
+            if (!validateEmail(email)) {
+                showNotification(translations[currentLanguage]?.invalidEmail || 'Please enter a valid email address', 'error');
+                return;
+            }
+
+            // Save to server API
+            try {
+                const response = await fetch('/api/newsletter/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showNotification(data.error || 'Subscription failed', 'error');
+                    return;
+                }
+
+                console.log('[Main] Modal newsletter subscriber saved to server:', email);
+                modalNewsletterInput.value = '';
+                // Close the modal
+                const modal = document.querySelector('[data-modal]');
+                if (modal) modal.classList.add('closed');
+                showNotification(translations[currentLanguage]?.subscribeSuccess || 'Successfully subscribed! Check your email for 15% discount code.', 'success');
+            } catch (error) {
+                console.error('[Main] Modal newsletter API error:', error);
+                // Fallback to localStorage
+                const subscribers = JSON.parse(localStorage.getItem('tarix_newsletter') || '[]');
+                if (subscribers.some(s => s.email.toLowerCase() === email.toLowerCase())) {
+                    showNotification(translations[currentLanguage]?.alreadySubscribed || 'This email is already subscribed', 'error');
+                    return;
+                }
+                subscribers.push({
+                    id: Date.now(),
+                    email: email,
+                    subscribed_at: new Date().toISOString(),
+                    discount_given: false,
+                    discount_amount: 0
+                });
+                localStorage.setItem('tarix_newsletter', JSON.stringify(subscribers));
+                console.log('[Main] Modal newsletter saved to localStorage (server unavailable)');
+                modalNewsletterInput.value = '';
+                const modal = document.querySelector('[data-modal]');
+                if (modal) modal.classList.add('closed');
+                showNotification(translations[currentLanguage]?.subscribeSuccess || 'Successfully subscribed! Check your email for 15% discount code.', 'success');
+            }
+        });
     }
 });
 
@@ -2471,7 +2594,8 @@ async function loadTestimonialsFromStorage() {
         container.innerHTML = titleHTML + '<div class="testimonial-cards-wrapper">' + cardsHTML + '</div>';
         console.log('[Main] Loaded', testimonials.length, 'testimonial cards');
     } catch (error) {
-        console.error('[Main] Error loading testimonials:', error);
+        console.error('[Main] Failed to load testimonials from API:', error);
+        console.warn('[Main] Falling back to static HTML. Is the server running?');
         // Keep static HTML as fallback
     }
 }
@@ -2500,7 +2624,8 @@ async function loadCTAFromStorage() {
         if (textEl && cta.text) textEl.textContent = cta.text;
         if (btnEl && cta.button_text) btnEl.textContent = cta.button_text;
     } catch (error) {
-        console.error('[Main] Error loading CTA:', error);
+        console.error('[Main] Failed to load CTA from API:', error);
+        console.warn('[Main] Falling back to static HTML. Is the server running?');
         // Keep static HTML as fallback
     }
 }
@@ -2583,7 +2708,8 @@ async function loadProductsFromStorage() {
         // Reinitialize product action buttons
         initProductActions();
     } catch (error) {
-        console.error('[Main] Error loading products:', error);
+        console.error('[Main] Failed to load products from API:', error);
+        console.warn('[Main] Falling back to static HTML. Is the server running?');
         // Keep static HTML as fallback
     }
 }
@@ -2677,7 +2803,8 @@ async function loadBannersFromStorage() {
             window.bannerSwiper.slideTo(0);
         }
     } catch (error) {
-        console.error('[Main] Error loading banners:', error);
+        console.error('[Main] Failed to load banners from API:', error);
+        console.warn('[Main] Falling back to static HTML. Is the server running?');
         // Keep static HTML as fallback
     }
 }
@@ -2736,7 +2863,8 @@ async function loadBestSellersFromStorage() {
             window.bestSellersSwiper.update();
         }
     } catch (error) {
-        console.error('[Main] Error loading bestsellers:', error);
+        console.error('[Main] Failed to load bestsellers from API:', error);
+        console.warn('[Main] Falling back to static HTML. Is the server running?');
         // Keep static HTML as fallback
     }
 }
@@ -2754,6 +2882,15 @@ async function loadProducts() {
 
 // Toggle dropdown on user icon click
 document.addEventListener('DOMContentLoaded', async function() {
+    // Detect if running on file:// protocol
+    if (window.location.protocol === 'file:') {
+        const warning = document.createElement('div');
+        warning.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#ff3860;color:white;padding:15px;text-align:center;z-index:999999;font-size:16px;';
+        warning.innerHTML = `⚠️ <strong>Server Required:</strong> Please run <code style="background:rgba(0,0,0,0.2);padding:2px 8px;border-radius:3px;">npm start</code> and visit <code style="background:rgba(0,0,0,0.2);padding:2px 8px;border-radius:3px;">http://localhost:10000</code> instead of opening this file directly.`;
+        document.body.insertBefore(warning, document.body.firstChild);
+        console.error('[Tarix] File protocol detected. API calls will fail. Please run the server.');
+    }
+
     const userIconBtn = document.querySelector('[data-user-icon]');
     if (userIconBtn) {
         userIconBtn.addEventListener('click', function(e) {

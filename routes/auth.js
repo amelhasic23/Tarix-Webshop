@@ -31,14 +31,22 @@ router.post('/login', async (req, res) => {
         req.session.adminId = admin.id;
         req.session.username = admin.username;
 
-        res.json({
-            success: true,
-            message: 'Login successful',
-            admin: {
-                id: admin.id,
-                username: admin.username,
-                email: admin.email
+        // Explicitly save session before responding
+        req.session.save((err) => {
+            if (err) {
+                console.error('Session save error:', err);
+                return res.status(500).json({ error: 'Could not create session' });
             }
+
+            res.json({
+                success: true,
+                message: 'Login successful',
+                admin: {
+                    id: admin.id,
+                    username: admin.username,
+                    email: admin.email
+                }
+            });
         });
     } catch (error) {
         console.error('Login error:', error);
@@ -58,6 +66,10 @@ router.post('/logout', isAuthenticated, (req, res) => {
 
 // Check auth status
 router.get('/check', (req, res) => {
+    console.log('[Auth Check] Session ID:', req.sessionID);
+    console.log('[Auth Check] Session data:', req.session);
+    console.log('[Auth Check] AdminId:', req.session?.adminId);
+
     if (req.session && req.session.adminId) {
         res.json({
             authenticated: true,
