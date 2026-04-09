@@ -1,7 +1,27 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const SQLiteStore = require('connect-sqlite3')(session);
+
+// Try SQLite session store, fallback to file store
+let sessionStore;
+try {
+    const SQLiteStore = require('connect-sqlite3')(session);
+    sessionStore = new SQLiteStore({
+        db: 'sessions.sqlite',
+        dir: path.join(__dirname, 'database'),
+        table: 'sessions'
+    });
+    console.log('✅ Using SQLite session store');
+} catch (error) {
+    console.warn('⚠️  SQLite session store failed, using file store:', error.message);
+    const FileStore = require('session-file-store')(session);
+    sessionStore = new FileStore({
+        path: path.join(__dirname, 'database', 'sessions'),
+        ttl: 86400, // 24 hours
+        retries: 0
+    });
+}
+
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
@@ -61,13 +81,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Session middleware with SQLite store for persistence
+// Session middleware with dynamic store
 app.use(session({
-    store: new SQLiteStore({
-        db: 'sessions.sqlite',
-        dir: path.join(__dirname, 'database'),
-        table: 'sessions'
-    }),
+    store: sessionStore,
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
     resave: false,
     saveUninitialized: false,
