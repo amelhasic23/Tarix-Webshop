@@ -402,6 +402,8 @@ const translations = {
         // Contact & Payment
         cashOnDelivery: "Cash on Delivery",
         cashOnDeliveryDesc: "Pay when you receive your package. No advance payment required.",
+        paymentCollectedOnDelivery: "Payment will be collected upon delivery",
+        paymentInfo: "Safe and secure payment options available",
         followUs: "Follow Us",
 
         // Menu & Language
@@ -715,6 +717,8 @@ const translations = {
         // Contact & Payment
         cashOnDelivery: "Nachnahme",
         cashOnDeliveryDesc: "Bezahlen Sie bei Erhalt Ihres Pakets. Keine Vorauszahlung erforderlich.",
+        paymentCollectedOnDelivery: "Die Zahlung wird bei der Lieferung eingezogen",
+        paymentInfo: "Sichere Zahlungsoptionen verfügbar",
         followUs: "Folgen Sie uns",
 
         // Menu & Language
@@ -1026,8 +1030,10 @@ const translations = {
         securePayment: "Sigurna uplata",
 
         // Contact & Payment
-        cashOnDelivery: "Plaćanje pouzećem",
+        cashOnDelivery: "Plaćanje pri preuzimanju",
         cashOnDeliveryDesc: "Platite kada primite paket. Nije potrebna avansna uplata.",
+        paymentCollectedOnDelivery: "Plaćanje će biti naplaćeno prilikom dostave",
+        paymentInfo: "Sigurne opcije plaćanja dostupne",
         followUs: "Pratite nas",
 
         // Menu & Language
