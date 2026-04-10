@@ -1032,6 +1032,9 @@ body.menu-open {
     justify-content: space-between;
     align-items: center;
     padding: 12px 0;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .accordion-menu .add-icon,
@@ -1239,6 +1242,8 @@ body.menu-open {
   color: var(--eerie-black);
   cursor: pointer;
   transition: var(--transition-smooth);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .category-dropdown-btn:hover {
@@ -5330,7 +5335,33 @@ body::-webkit-scrollbar-thumb {
   }
 
   .header-top-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .header-top-actions .currency-badge {
     display: none;
+  }
+
+  .header-top-actions select {
+    min-width: 100px;
+    font-size: var(--fs-10);
+    -webkit-appearance: menulist;
+    appearance: menulist;
+    touch-action: manipulation;
+  }
+
+  /* Mobile touch support for dropdowns */
+  .category-dropdown-btn,
+  .accordion-menu {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+  }
+
+  .submenu-category-list,
+  .category-dropdown-content {
+    touch-action: pan-y;
   }
 }
 

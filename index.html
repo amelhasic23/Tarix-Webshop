@@ -1756,7 +1756,6 @@
         <div class="footer-bottom">
             <div class="container">
                 <div class="payment-info">
-                    <img src="./assets/images/payment.png" alt="payment method" class="payment-img">
                     <p class="payment-text" data-translate="paymentInfo">Safe and secure payment options available</p>
                 </div>
                 <p class="copyright" data-translate="copyright">
@@ -1923,12 +1922,18 @@
             const categoryDropdownContent = document.querySelector('.category-dropdown-content');
 
             if (categoryDropdownBtn) {
-                categoryDropdownBtn.addEventListener('click', function() {
-                    this.classList.toggle('active');
+                // Handle both click and touch events for mobile compatibility
+                const toggleDropdown = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    categoryDropdownBtn.classList.toggle('active');
                     categoryDropdownContent.classList.toggle('active');
-                });
+                };
 
-                // Close dropdown when clicking outside
+                categoryDropdownBtn.addEventListener('click', toggleDropdown);
+                categoryDropdownBtn.addEventListener('touchend', toggleDropdown);
+
+                // Close dropdown when clicking/tapping outside
                 document.addEventListener('click', function(e) {
                     if (!e.target.closest('.category-dropdown')) {
                         categoryDropdownBtn.classList.remove('active');

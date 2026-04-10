@@ -1164,6 +1164,32 @@ document.addEventListener('DOMContentLoaded', function() {
         console.warn('Language selector not found');
     }
 
+    // Mobile menu language links handler
+    const mobileLanguageLinks = document.querySelectorAll('.mobile-navigation-menu .submenu-category-list a[data-translate]');
+    mobileLanguageLinks.forEach(link => {
+        const langKey = link.getAttribute('data-translate');
+        // Map translation keys to language codes
+        const langMap = { 'english': 'en', 'german': 'de', 'bosnian': 'bs' };
+        const langCode = langMap[langKey];
+
+        if (langCode) {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                translatePage(langCode);
+                // Update the header select to match
+                if (languageSelector) {
+                    languageSelector.value = langCode;
+                }
+                // Close the mobile menu
+                const mobileMenu = document.querySelector('[data-mobile-menu]');
+                const overlay = document.querySelector('[data-overlay]');
+                if (mobileMenu) mobileMenu.classList.remove('active');
+                if (overlay) overlay.classList.remove('active');
+                document.body.classList.remove('menu-open');
+            });
+        }
+    });
+
     // Initialize with saved language
     translatePage(currentLanguage);
     console.log('Initial translation complete');
@@ -2321,7 +2347,10 @@ const accordionBtn = document.querySelectorAll("[data-accordion-btn]");
 const accordionContent = document.querySelectorAll("[data-accordion-content]");
 
 for (let i = 0; i < accordionBtn.length; i++) {
-    accordionBtn[i].addEventListener("click", function () {
+    const handleAccordionToggle = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
         const isActive = this.classList.contains("active");
 
         // Close all accordions
@@ -2334,7 +2363,10 @@ for (let i = 0; i < accordionBtn.length; i++) {
             this.classList.add("active");
             if (this.nextElementSibling) this.nextElementSibling.classList.add("active");
         }
-    });
+    };
+
+    accordionBtn[i].addEventListener("click", handleAccordionToggle);
+    accordionBtn[i].addEventListener("touchend", handleAccordionToggle);
 }
 
 // ========================================
