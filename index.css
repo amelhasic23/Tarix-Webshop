@@ -4855,7 +4855,10 @@ footer {
 /* Enhanced Action Buttons */
 .header-user-actions .action-btn {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .header-user-actions .action-btn::before {

@@ -489,6 +489,16 @@ const translations = {
         hotOffers2: "Hot Offers",
         min2: "Min",
         sec2: "Sec",
+
+        // UI Controls
+        toggleDarkMode: "Toggle dark mode",
+        userAccount: "User account",
+        selectLanguage: "Select language",
+        openMenu: "Open menu",
+        closeMenu: "Close menu",
+        closeNewsletter: "Close newsletter",
+        backToTop: "Back to top",
+        search: "Search",
     },
     de: {
         // Navigation
@@ -804,6 +814,16 @@ const translations = {
         hotOffers2: "Heiße Angebote",
         min2: "Min",
         sec2: "Sek",
+
+        // UI Controls
+        toggleDarkMode: "Dunkelmodus umschalten",
+        userAccount: "Benutzerkonto",
+        selectLanguage: "Sprache wählen",
+        openMenu: "Menü öffnen",
+        closeMenu: "Menü schließen",
+        closeNewsletter: "Newsletter schließen",
+        backToTop: "Nach oben",
+        search: "Suchen",
     },
     bs: {
         // Navigation
@@ -1119,6 +1139,16 @@ const translations = {
         hotOffers2: "Vruće ponude",
         min2: "Min",
         sec2: "Sek",
+
+        // UI Controls
+        toggleDarkMode: "Uključi/isključi tamni režim",
+        userAccount: "Korisnički račun",
+        selectLanguage: "Odaberi jezik",
+        openMenu: "Otvori meni",
+        closeMenu: "Zatvori meni",
+        closeNewsletter: "Zatvori newsletter",
+        backToTop: "Nazad na vrh",
+        search: "Pretraži",
     }
 };
 
@@ -1144,6 +1174,14 @@ function translatePage(lang) {
         const key = element.getAttribute('data-translate-placeholder');
         if (langData[key]) {
             element.placeholder = langData[key];
+        }
+    });
+
+    // Translate aria-labels
+    document.querySelectorAll('[data-translate-aria-label]').forEach(element => {
+        const key = element.getAttribute('data-translate-aria-label');
+        if (langData[key]) {
+            element.setAttribute('aria-label', langData[key]);
         }
     });
 }
@@ -2708,16 +2746,16 @@ async function loadProductsFromStorage() {
                         ${discount > 0 ? `<p class="showcase-badge">${discount}%</p>` : ''}
                         ${product.best_seller ? '<p class="showcase-badge angle pink">Best</p>' : ''}
                         <div class="showcase-actions">
-                            <button class="btn-action" aria-label="Add to favorites" data-action="add-favorite">
+                            <button class="btn-action" aria-label="Add to favorites" data-translate-aria-label="addToFavorites" data-action="add-favorite">
                                 <ion-icon name="heart-outline"></ion-icon>
                             </button>
-                            <button class="btn-action" aria-label="Quick view" data-action="quick-view">
+                            <button class="btn-action" aria-label="Quick view" data-translate-aria-label="quickView" data-action="quick-view">
                                 <ion-icon name="eye-outline"></ion-icon>
                             </button>
-                            <button class="btn-action" aria-label="Compare" data-action="compare">
+                            <button class="btn-action" aria-label="Compare" data-translate-aria-label="compare" data-action="compare">
                                 <ion-icon name="repeat-outline"></ion-icon>
                             </button>
-                            <button class="btn-action" aria-label="Add to cart" data-action="add-cart">
+                            <button class="btn-action" aria-label="Add to cart" data-translate-aria-label="addToCart" data-action="add-cart">
                                 <ion-icon name="bag-add-outline"></ion-icon>
                             </button>
                         </div>
