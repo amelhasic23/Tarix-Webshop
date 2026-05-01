@@ -1,3 +1,24 @@
+// ===== DARK MODE =====
+function initDarkMode() {
+    const toggle = document.getElementById('darkModeToggle');
+    const icon = document.getElementById('darkModeIcon');
+    if (!toggle || !icon) return;
+
+    const isDark = localStorage.getItem('adminDarkMode') === 'true';
+    if (isDark) {
+        document.body.classList.add('dark-mode');
+        icon.setAttribute('name', 'sunny-outline');
+        toggle.setAttribute('aria-pressed', 'true');
+    }
+
+    toggle.addEventListener('click', () => {
+        const dark = document.body.classList.toggle('dark-mode');
+        icon.setAttribute('name', dark ? 'sunny-outline' : 'moon-outline');
+        toggle.setAttribute('aria-pressed', String(dark));
+        localStorage.setItem('adminDarkMode', String(dark));
+    });
+}
+
 // ===== API CONFIGURATION =====
 const API_BASE = '/api';
 
@@ -858,6 +879,7 @@ function setupLogout() {
 async function init() {
     console.log('[Admin] Running init()...');
     try {
+        initDarkMode();
         translateUI();
         setupLanguageSelector();
         setupLogout();

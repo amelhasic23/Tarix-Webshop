@@ -6,6 +6,8 @@
     <title>Admin Dashboard - Tarix WebShop</title>
     <link rel="icon" href="../Images/logo/favicon.ico" type="image/x-icon">
     <link rel="shortcut icon" href="../Images/logo/favicon.ico" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="dashboard.css">
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
@@ -68,6 +70,9 @@
                     <option value="de">Deutsch</option>
                     <option value="bs">Bosanski</option>
                 </select>
+                <button class="dark-mode-toggle" id="darkModeToggle" aria-label="Toggle dark mode" aria-pressed="false">
+                    <ion-icon name="moon-outline" id="darkModeIcon"></ion-icon>
+                </button>
                 <span id="adminUsername" class="username"></span>
             </div>
         </header>
