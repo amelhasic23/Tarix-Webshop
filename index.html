@@ -145,9 +145,88 @@
         </div>
 
         <div class="header-user-actions">
-            <button class="action-btn" id="darkModeToggle" aria-label="Toggle dark mode" data-translate-aria-label="toggleDarkMode" aria-pressed="false">
-                <ion-icon name="moon-outline"></ion-icon>
-            </button>
+            <div class="categories-dropdown-wrapper">
+                <button class="action-btn" id="categoriesToggle" aria-label="Categories" data-translate-aria-label="categories" aria-haspopup="true" aria-expanded="false">
+                    <ion-icon name="apps-outline"></ion-icon>
+                </button>
+                <div class="categories-dropdown" id="categoriesDropdown" role="menu">
+                    <nav class="categories-dropdown-nav">
+                        <ul class="category-tree">
+                            <li class="category-item">
+                                <button class="category-toggle active" data-category="all" aria-expanded="false">
+                                    <ion-icon name="apps-outline"></ion-icon>
+                                    <span data-translate="allCategories">All Categories</span>
+                                </button>
+                            </li>
+
+                            <li class="category-item has-children">
+                                <button class="category-toggle" data-category="electronics" aria-expanded="false">
+                                    <ion-icon name="flash-outline"></ion-icon>
+                                    <span data-translate="catElectronics">Electronics</span>
+                                    <ion-icon name="chevron-down-outline" class="dropdown-icon"></ion-icon>
+                                </button>
+                                <ul class="subcategory-list" role="region" aria-labelledby="electronics-toggle">
+                                    <li><button class="subcategory-link" data-subcategory="phones">Smartphones</button></li>
+                                    <li><button class="subcategory-link" data-subcategory="laptops">Laptops</button></li>
+                                    <li><button class="subcategory-link" data-subcategory="tablets">Tablets</button></li>
+                                </ul>
+                            </li>
+
+                            <li class="category-item has-children">
+                                <button class="category-toggle" data-category="plumbing" aria-expanded="false">
+                                    <ion-icon name="water-outline"></ion-icon>
+                                    <span data-translate="catPlumbing">Plumbing</span>
+                                    <ion-icon name="chevron-down-outline" class="dropdown-icon"></ion-icon>
+                                </button>
+                                <ul class="subcategory-list" role="region" aria-labelledby="plumbing-toggle">
+                                    <li><button class="subcategory-link" data-subcategory="pipes">Pipes</button></li>
+                                    <li><button class="subcategory-link" data-subcategory="faucets">Faucets</button></li>
+                                    <li><button class="subcategory-link" data-subcategory="fixtures">Fixtures</button></li>
+                                </ul>
+                            </li>
+
+                            <li class="category-item has-children">
+                                <button class="category-toggle" data-category="garden" aria-expanded="false">
+                                    <ion-icon name="leaf-outline"></ion-icon>
+                                    <span data-translate="catGarden">Garden</span>
+                                    <ion-icon name="chevron-down-outline" class="dropdown-icon"></ion-icon>
+                                </button>
+                                <ul class="subcategory-list" role="region" aria-labelledby="garden-toggle">
+                                    <li><button class="subcategory-link" data-subcategory="seeds">Seeds</button></li>
+                                    <li><button class="subcategory-link" data-subcategory="fertilizers">Fertilizers</button></li>
+                                    <li><button class="subcategory-link" data-subcategory="pots">Pots & Planters</button></li>
+                                </ul>
+                            </li>
+
+                            <li class="category-item has-children">
+                                <button class="category-toggle" data-category="tools" aria-expanded="false">
+                                    <ion-icon name="hammer-outline"></ion-icon>
+                                    <span data-translate="catTools">Tools</span>
+                                    <ion-icon name="chevron-down-outline" class="dropdown-icon"></ion-icon>
+                                </button>
+                                <ul class="subcategory-list" role="region" aria-labelledby="tools-toggle">
+                                    <li><button class="subcategory-link" data-subcategory="hand-tools">Hand Tools</button></li>
+                                    <li><button class="subcategory-link" data-subcategory="power-tools">Power Tools</button></li>
+                                    <li><button class="subcategory-link" data-subcategory="hardware">Hardware</button></li>
+                                </ul>
+                            </li>
+
+                            <li class="category-item has-children">
+                                <button class="category-toggle" data-category="automotive" aria-expanded="false">
+                                    <ion-icon name="car-outline"></ion-icon>
+                                    <span data-translate="catAutomotive">Automotive</span>
+                                    <ion-icon name="chevron-down-outline" class="dropdown-icon"></ion-icon>
+                                </button>
+                                <ul class="subcategory-list" role="region" aria-labelledby="automotive-toggle">
+                                    <li><button class="subcategory-link" data-subcategory="parts">Auto Parts</button></li>
+                                    <li><button class="subcategory-link" data-subcategory="accessories">Accessories</button></li>
+                                    <li><button class="subcategory-link" data-subcategory="maintenance">Maintenance</button></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
 
             <div class="user-icon-wrapper">
                 <button class="action-btn" data-user-icon aria-label="User account" data-translate-aria-label="userAccount" aria-haspopup="true" aria-expanded="false">
@@ -229,6 +308,13 @@
 
         <ul class="mobile-menu-category-list">
             <li class="menu-category">
+                <button class="menu-title mobile-user-btn" data-user-icon aria-label="User account" data-translate-aria-label="userAccount">
+                    <ion-icon name="person-outline"></ion-icon>
+                    <span data-translate="userAccount">My Account</span>
+                </button>
+            </li>
+
+            <li class="menu-category">
                 <a href="#home" class="menu-title" data-translate="home">Home</a>
             </li>
 
@@ -305,7 +391,7 @@
         <!-- LAYOUT CONTAINER WITH SIDEBAR -->
         <div class="layout-container" id="home">
             <!-- LEFT SIDEBAR CATEGORIES -->
-            <aside class="category-sidebar" id="categorySidebar">
+            <aside class="category-sidebar mobile-only" id="categorySidebar">
                 <div class="sidebar-header">
                     <h2 class="sidebar-title" data-translate="categories">Categories</h2>
                     <button class="sidebar-close-btn" data-sidebar-close aria-label="Close sidebar">
@@ -1224,216 +1310,8 @@
     <!-- Load main JavaScript file -->
     <script defer src="index.js"></script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // ==========================================
-            // SWIPER SLIDERS
-            // ==========================================
-
-            // Initialize Testimonials Swiper
-            const testimonialSwiper = new Swiper('.testimonial-cards-wrapper', {
-                loop: true,
-                slidesPerView: 1,
-                spaceBetween: 25,
-                centeredSlides: true,
-                autoHeight: false,
-                pagination: {
-                    el: '.testimonial-cards-wrapper .swiper-pagination',
-                    clickable: true,
-                    dynamicBullets: true,
-                },
-                navigation: {
-                    nextEl: '.testimonial-cards-wrapper .swiper-button-next',
-                    prevEl: '.testimonial-cards-wrapper .swiper-button-prev',
-                },
-                breakpoints: {
-                    640: {
-                        slidesPerView: 2,
-                        spaceBetween: 20,
-                        centeredSlides: false,
-                    },
-                    1024: {
-                        slidesPerView: 3,
-                        spaceBetween: 25,
-                        centeredSlides: false,
-                    },
-                    1400: {
-                        slidesPerView: 3,
-                        spaceBetween: 30,
-                        centeredSlides: false,
-                    }
-                },
-                autoplay: {
-                    delay: 5000,
-                    disableOnInteraction: false,
-                    pauseOnMouseEnter: true,
-                },
-                effect: 'slide',
-                speed: 600,
-                watchSlidesProgress: true,
-                observer: true,
-                observeParents: true,
-                resizeObserver: true,
-            });
-
-            // Force Swiper to recalculate slide widths after the full page
-            // layout is settled (fonts, images, CSS grid all resolved).
-            window.addEventListener('load', () => testimonialSwiper.update());
-
-            // ==========================================
-            // MODAL FUNCTIONALITY
-            // ==========================================
-            const modal = document.querySelector('[data-modal]');
-            const modalCloseBtn = document.querySelector('[data-button-close]');
-            const modalCloseOverlay = document.querySelector('[data-modal-overlay]');
-            const overlay = document.querySelector('[data-overlay]');
-
-            function closeModal() {
-                modal.classList.add('closed');
-                overlay.classList.add('hidden');
-            }
-
-            if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
-            if (modalCloseOverlay) modalCloseOverlay.addEventListener('click', closeModal);
-
-            // ==========================================
-            // NOTIFICATION TOAST
-            // ==========================================
-            const toast = document.querySelector('[data-toast]');
-            const toastCloseBtn = document.querySelector('[data-toast-close]');
-
-            if (toastCloseBtn) {
-                toastCloseBtn.addEventListener('click', function() {
-                    toast.classList.add('closed');
-                });
-            }
-
-            // ==========================================
-            // MOBILE MENU
-            // ==========================================
-            const mobileMenuOpenBtns = document.querySelectorAll('[data-mobile-menu-open-btn]');
-            const mobileMenu = document.querySelector('[data-mobile-menu]');
-            const mobileMenuCloseBtn = document.querySelector('[data-mobile-menu-close-btn]');
-
-            function openMobileMenu() {
-                mobileMenu.classList.add('open');
-                overlay.classList.remove('hidden');
-            }
-
-            function closeMobileMenu() {
-                mobileMenu.classList.remove('open');
-                overlay.classList.add('hidden');
-            }
-
-            mobileMenuOpenBtns.forEach(btn => {
-                btn.addEventListener('click', openMobileMenu);
-            });
-
-            if (mobileMenuCloseBtn) mobileMenuCloseBtn.addEventListener('click', closeMobileMenu);
-            if (overlay) overlay.addEventListener('click', closeMobileMenu);
-
-            // ==========================================
-            // ACCORDION MENU (Mobile)
-            // ==========================================
-            const accordionBtns = document.querySelectorAll('[data-accordion-btn]');
-
-            accordionBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const accordion = this.nextElementSibling;
-                    this.classList.toggle('active');
-                    accordion.classList.toggle('active');
-                });
-            });
-
-            // ==========================================
-            // CATEGORY DROPDOWN
-            // ==========================================
-            const categoryDropdownBtn = document.querySelector('.category-dropdown-btn');
-            const categoryDropdownContent = document.querySelector('.category-dropdown-content');
-
-            if (categoryDropdownBtn) {
-                // Handle both click and touch events for mobile compatibility
-                const toggleDropdown = function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    categoryDropdownBtn.classList.toggle('active');
-                    categoryDropdownContent.classList.toggle('active');
-                };
-
-                categoryDropdownBtn.addEventListener('click', toggleDropdown);
-                categoryDropdownBtn.addEventListener('touchend', toggleDropdown);
-
-                // Close dropdown when clicking/tapping outside
-                document.addEventListener('click', function(e) {
-                    if (!e.target.closest('.category-dropdown')) {
-                        categoryDropdownBtn.classList.remove('active');
-                        categoryDropdownContent.classList.remove('active');
-                    }
-                });
-            }
-
-            // ==========================================
-            // CATEGORY BAR + FILTER
-            // ==========================================
-            const categoryBarItems = document.querySelectorAll('.category-bar-item[data-filter-category]');
-            const categoryFilterSelect = document.getElementById('categoryFilter');
-
-            categoryBarItems.forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const category = this.dataset.filterCategory;
-
-                    // Update active state on bar
-                    categoryBarItems.forEach(cat => cat.classList.remove('active'));
-                    this.classList.add('active');
-
-                    // Sync with the toolbar select
-                    if (categoryFilterSelect) {
-                        categoryFilterSelect.value = category;
-                        categoryFilterSelect.dispatchEvent(new Event('change'));
-                    }
-
-                    // Scroll to products
-                    const productsSection = document.getElementById('new-products');
-                    if (productsSection) {
-                        productsSection.scrollIntoView({ behavior: 'smooth' });
-                    }
-                });
-            });
-
-            // Also sync bar when toolbar select changes
-            if (categoryFilterSelect) {
-                categoryFilterSelect.addEventListener('change', function() {
-                    const val = this.value;
-                    categoryBarItems.forEach(item => {
-                        item.classList.toggle('active', item.dataset.filterCategory === val);
-                    });
-                });
-            }
-
-            // ==========================================
-            // SMOOTH SCROLL FOR ANCHOR LINKS
-            // ==========================================
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function(e) {
-                    const href = this.getAttribute('href');
-                    if (href !== '#') {
-                        const target = document.querySelector(href);
-                        if (target) {
-                            e.preventDefault();
-                            target.scrollIntoView({
-                                behavior: 'smooth',
-                                block: 'start'
-                            });
-                            // Close mobile menu if open
-                            closeMobileMenu();
-                        }
-                    }
-                });
-            });
-
-        });
-    </script>
+    <!-- External UI initialization script (deferred for better performance) -->
+    <script defer src="swiper-init.js"></script>
 
     <!-- Back to Top Button -->
     <button id="backToTopBtn" class="back-to-top-btn" aria-label="Back to top" data-translate-aria-label="backToTop">
