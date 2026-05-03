@@ -16,7 +16,14 @@ router.get('/banners', async (req, res) => {
 // Get all categories
 router.get('/categories', async (req, res) => {
     try {
-        const categories = await all('SELECT * FROM categories ORDER BY order_position ASC, id ASC');
+        const categories = await all(
+            `SELECT c.id, c.name, c.icon_path, c.parent_id, c.order_position, c.created_at,
+                    COUNT(p.id) as product_count
+             FROM categories c
+             LEFT JOIN products p ON p.category_id = c.id
+             GROUP BY c.id
+             ORDER BY c.order_position ASC, c.id ASC`
+        );
         res.json(categories);
     } catch (error) {
         console.error('Error fetching categories:', error);

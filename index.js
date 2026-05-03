@@ -60,131 +60,10 @@ const DOM = {
 };
 
 // ========================================
-// ENHANCED DARK MODE TOGGLE
+// CLEANUP: Dark mode removed per user request
 // ========================================
-let isDarkMode = localStorage.getItem('darkMode') === 'true';
-
-function initDarkMode() {
-    // Add transition class to body for smooth switching
-    document.body.style.transition = 'background 0.5s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s ease';
-
-    if (isDarkMode) {
-        document.body.classList.add('dark-mode');
-    }
-    updateDarkModeToggle();
-
-    // Remove transition after initial load to prevent issues
-    setTimeout(() => {
-        document.body.style.transition = '';
-    }, 500);
-}
-
-function toggleDarkMode() {
-    // Add transition for smooth toggle
-    document.body.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-
-    isDarkMode = !isDarkMode;
-    localStorage.setItem('darkMode', isDarkMode);
-    document.body.classList.toggle('dark-mode', isDarkMode);
-
-    // Add ripple effect to toggle button
-    createToggleRipple();
-
-    updateDarkModeToggle();
-
-    // Remove transition after toggle completes
-    setTimeout(() => {
-        document.body.style.transition = '';
-    }, 400);
-}
-
-function createToggleRipple() {
-    const toggleBtn = document.getElementById('darkModeToggle');
-    if (!toggleBtn) return;
-
-    // Remove existing ripple
-    const existingRipple = toggleBtn.querySelector('.toggle-ripple');
-    if (existingRipple) {
-        existingRipple.remove();
-    }
-
-    // Create new ripple element
-    const ripple = document.createElement('div');
-    ripple.className = 'toggle-ripple';
-    ripple.style.cssText = `
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 0;
-        height: 0;
-        background: ${isDarkMode ? 'hsl(45, 100%, 75%)' : 'var(--salmon-pink)'};
-        border-radius: 50%;
-        opacity: 0.4;
-        transform: translate(-50%, -50%);
-        animation: toggleRipple 0.6s ease-out forwards;
-        pointer-events: none;
-        z-index: 0;
-    `;
-
-    toggleBtn.appendChild(ripple);
-
-    // Remove ripple after animation
-    setTimeout(() => {
-        ripple.remove();
-    }, 600);
-}
-
-function updateDarkModeToggle() {
-    const toggleBtn = document.getElementById('darkModeToggle');
-    if (toggleBtn) {
-        const icon = toggleBtn.querySelector('ion-icon');
-        if (icon) {
-            // Add rotation animation when switching
-            icon.style.transform = 'scale(0.8) rotate(180deg)';
-            icon.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-
-            setTimeout(() => {
-                icon.setAttribute('name', isDarkMode ? 'sunny-outline' : 'moon-outline');
-                icon.style.transform = 'scale(1) rotate(0deg)';
-            }, 150);
-        }
-        toggleBtn.setAttribute('aria-pressed', isDarkMode);
-
-        // Update tooltip
-        const tooltip = isDarkMode ? 'Switch to light mode' : 'Switch to dark mode';
-        toggleBtn.setAttribute('title', tooltip);
-        toggleBtn.setAttribute('aria-label', tooltip);
-    }
-}
-
-// Add CSS for toggle ripple animation
-const toggleRippleCSS = `
-    @keyframes toggleRipple {
-        0% {
-            width: 0;
-            height: 0;
-            opacity: 0.6;
-        }
-        50% {
-            width: 80px;
-            height: 80px;
-            opacity: 0.3;
-        }
-        100% {
-            width: 120px;
-            height: 120px;
-            opacity: 0;
-        }
-    }
-`;
-
-// Inject ripple CSS
-const rippleStyleSheet = document.createElement('style');
-rippleStyleSheet.textContent = toggleRippleCSS;
-document.head.appendChild(rippleStyleSheet);
-
-// Initialize dark mode immediately with enhanced effects
-initDarkMode();
+// Clean up any existing dark mode preference from localStorage
+localStorage.removeItem('darkMode');
 
 // ========================================
 // GLOBAL MODAL ESCAPE KEY HANDLER
@@ -2820,6 +2699,41 @@ async function loadCategoriesFromStorage() {
             </div>
         `;
         }).join('');
+
+        // Populate #categoryFilter select with dynamic categories
+        const categoryFilter = document.getElementById('categoryFilter');
+        if (categoryFilter) {
+            const allOption = categoryFilter.querySelector('option[value="all"]');
+            categoryFilter.innerHTML = '';
+            if (allOption) {
+                categoryFilter.appendChild(allOption);
+            } else {
+                const opt = document.createElement('option');
+                opt.value = 'all';
+                opt.textContent = 'All Categories';
+                categoryFilter.appendChild(opt);
+            }
+            categories.forEach(cat => {
+                const filterAttr = (cat.name || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
+                const opt = document.createElement('option');
+                opt.value = filterAttr;
+                opt.textContent = sanitizeHTML(cat.name || '');
+                categoryFilter.appendChild(opt);
+            });
+        }
+
+        // Attach delegated click handler for dynamic category cards
+        container.addEventListener('click', (e) => {
+            const card = e.target.closest('.category-item[data-filter-category]');
+            if (!card) return;
+            const filterAttr = card.dataset.filterCategory;
+            if (filterAttr && typeof filterProductsByCategory === 'function') {
+                filterProductsByCategory(filterAttr);
+                const categoriesDropdown = container.closest('.categories-dropdown, .category-dropdown-content')?.parentElement;
+                if (categoriesDropdown) categoriesDropdown.classList.remove('active');
+            }
+        }, { once: false });
+
     } catch (error) {
         console.error('[Main] Error loading categories:', error);
         // Keep static HTML as fallback
@@ -2847,24 +2761,38 @@ async function loadTestimonialsFromStorage() {
             return;
         }
 
-        // Preserve the title
-        const title = container.querySelector('.title');
-        const titleHTML = title ? title.outerHTML : '<h2 class="title" data-translate="testimonials">Testimonials</h2>';
+        // Target only the swiper-wrapper inside testimonial-cards-wrapper
+        const swiperWrapper = container.querySelector('.testimonial-cards-wrapper .swiper-wrapper');
+        if (!swiperWrapper) {
+            console.log('[Main] Swiper wrapper not found, keeping static HTML');
+            return;
+        }
 
-        // Generate cards for ALL active testimonials
-        const cardsHTML = testimonials.map(t => `
-            <div class="testimonial-card">
-                <img src="${sanitizeURL(t.image_path || './assets/images/testimonial-1.jpg')}"
-                     alt="${sanitizeHTML(t.customer_name || 'Customer')}" class="testimonial-banner">
-                <p class="testimonial-name">${sanitizeHTML(t.customer_name || 'Customer')}</p>
-                <p class="testimonial-title">${sanitizeHTML(t.customer_role || '')}</p>
-                <img src="./assets/images/icons/quotes.svg" alt="quotation" class="quotation-img">
-                <p class="testimonial-desc">${sanitizeHTML(t.text || '')}</p>
+        swiperWrapper.innerHTML = testimonials.map(t => `
+            <div class="swiper-slide">
+                <div class="testimonial-card">
+                    <img src="${sanitizeURL(t.image_path || './assets/images/testimonial-1.jpg')}"
+                         alt="${sanitizeHTML(t.customer_name || 'Customer')}" class="testimonial-banner" width="72" height="72">
+                    <div class="testimonial-content">
+                        <p class="testimonial-name">${sanitizeHTML(t.customer_name || 'Customer')}</p>
+                        <p class="testimonial-title">${sanitizeHTML(t.customer_role || '')}</p>
+                        <div class="testimonial-rating">
+                            ${Array.from({length: 5}, (_, i) => `<ion-icon name="${i < (t.rating || 5) ? 'star' : 'star-outline'}"></ion-icon>`).join('')}
+                        </div>
+                        <img src="./assets/images/icons/quotes.svg" alt="quotation" class="quotation-img" width="26" height="26">
+                        <blockquote class="testimonial-desc">${sanitizeHTML(t.text || '')}</blockquote>
+                    </div>
+                </div>
             </div>
         `).join('');
 
-        container.innerHTML = titleHTML + '<div class="testimonial-cards-wrapper">' + cardsHTML + '</div>';
-        console.log('[Main] Loaded', testimonials.length, 'testimonial cards');
+        // Update Swiper after content change
+        if (window.testimonialSwiper) {
+            window.testimonialSwiper.update();
+            window.testimonialSwiper.slideTo(0);
+        }
+
+        console.log('[Main] Loaded', testimonials.length, 'testimonial slides');
     } catch (error) {
         console.error('[Main] Failed to load testimonials from API:', error);
         console.warn('[Main] Falling back to static HTML. Is the server running?');
@@ -2921,7 +2849,7 @@ async function loadProductsFromStorage() {
         console.log('[Main] Loaded', products.length, 'products from server');
 
         if (products.length === 0) {
-            console.log('[Main] No products found, keeping static HTML');
+            productGrid.innerHTML = '<p class="no-products" style="padding:2rem;text-align:center;color:var(--sonic-silver)" data-translate="noProducts">No products available.</p>';
             return;
         }
 
@@ -3043,7 +2971,8 @@ async function loadBannersFromStorage() {
         console.log('[Main] Loaded', banners.length, 'banners from server');
 
         if (banners.length === 0) {
-            console.log('[Main] No banners found, keeping static HTML');
+            swiperWrapper.innerHTML = '';
+            if (window.bannerSwiper) window.bannerSwiper.update();
             return;
         }
 
@@ -3093,7 +3022,10 @@ async function loadBestSellersFromStorage() {
         if (!response.ok) throw new Error('Failed to fetch bestsellers');
 
         const bestSellers = await response.json();
-        if (bestSellers.length === 0) return; // Keep static HTML
+        if (bestSellers.length === 0) {
+            swiperWrapper.innerHTML = '';
+            return;
+        }
 
         swiperWrapper.innerHTML = bestSellers.map(product => {
             const safeName = sanitizeHTML(product.name || '');
@@ -3187,6 +3119,72 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     });
 
+    // Categories Dropdown Toggle
+    const categoriesToggleBtn = document.querySelector('#categoriesToggle');
+    const categoriesDropdown = document.querySelector('#categoriesDropdown');
+
+    if (categoriesToggleBtn && categoriesDropdown) {
+        // Toggle dropdown on button click
+        categoriesToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            categoriesDropdown.classList.toggle('active');
+            const isExpanded = categoriesDropdown.classList.contains('active');
+            categoriesToggleBtn.setAttribute('aria-expanded', isExpanded);
+
+            // Close user dropdown if open
+            const userDropdown = document.getElementById('userDropdown');
+            if (userDropdown && userDropdown.classList.contains('active')) {
+                userDropdown.classList.remove('active');
+                const userIcon = document.querySelector('[data-user-icon]');
+                if (userIcon) userIcon.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!categoriesDropdown.contains(e.target) && !categoriesToggleBtn.contains(e.target)) {
+                categoriesDropdown.classList.remove('active');
+                categoriesToggleBtn.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // Handle category and subcategory selection
+        const categoryButtons = categoriesDropdown.querySelectorAll('.category-toggle, .subcategory-link');
+        categoryButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                // Get category from data attribute
+                const category = button.dataset.category || button.dataset.subcategory;
+                if (category) {
+                    // Close dropdown after selection
+                    categoriesDropdown.classList.remove('active');
+                    categoriesToggleBtn.setAttribute('aria-expanded', 'false');
+
+                    // Trigger existing filter function
+                    if (typeof filterProductsByCategory === 'function') {
+                        filterProductsByCategory(category);
+                    }
+                }
+
+                // Handle subcategory expansion
+                if (button.classList.contains('category-toggle')) {
+                    const parentItem = button.closest('.category-item');
+                    if (parentItem && parentItem.classList.contains('has-children')) {
+                        const subcategoryList = parentItem.querySelector('.subcategory-list');
+                        if (subcategoryList) {
+                            // Toggle expanded class
+                            subcategoryList.classList.toggle('expanded');
+                            // Update aria-expanded
+                            const isExpanded = subcategoryList.classList.contains('expanded');
+                            button.setAttribute('aria-expanded', isExpanded);
+                            // Toggle dropdown-open class for icon rotation
+                            button.classList.toggle('dropdown-open', isExpanded);
+                        }
+                    }
+                }
+            });
+        });
+    }
+
     // Initialize user dropdown
     renderUserDropdown();
 
@@ -3194,13 +3192,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     // INITIALIZE NEW FEATURES
     // ========================================
     initGlobalModalEscapeHandler();
-
-    // Dark mode toggle
-    const darkModeToggle = document.getElementById('darkModeToggle');
-    if (darkModeToggle) {
-        darkModeToggle.addEventListener('click', toggleDarkMode);
-        updateDarkModeToggle(); // Update icon on page load
-    }
 
     // ========================================
     // COUNTDOWN TIMER
@@ -3460,13 +3451,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Load banners from admin (must be before Swiper init in index.html)
     loadBannersFromStorage();
 
-    // Load categories, testimonials, CTA
-    loadCategoriesFromStorage();
-    loadTestimonialsFromStorage();
-    loadCTAFromStorage();
+    // Load categories, testimonials, CTA in parallel
+    await Promise.all([
+        loadCategoriesFromStorage(),
+        loadTestimonialsFromStorage(),
+        loadCTAFromStorage()
+    ]);
 
-    // Load products from admin (replaces static HTML if data exists)
-    loadProductsFromStorage();
+    // Load products and wait — product grid must be populated before allProducts is queried
+    await loadProductsFromStorage();
     loadBestSellersFromStorage();
 
     // ========================================

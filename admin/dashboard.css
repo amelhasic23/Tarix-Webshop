@@ -760,3 +760,55 @@ body {
         padding: 16px;
     }
 }
+
+/* ===== REFRESH & PREVIEW BUTTONS ===== */
+.btn-refresh,
+.btn-preview {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 13px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-family: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.btn-refresh {
+    background: var(--card-bg);
+    border: 1.5px solid var(--input-border);
+    color: var(--text-primary);
+}
+
+.btn-refresh:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: hsla(14, 100%, 55%, 0.06);
+}
+
+.btn-preview {
+    background: var(--primary);
+    border: 1.5px solid var(--primary);
+    color: white;
+}
+
+.btn-preview:hover {
+    background: var(--primary-dark, #e64a19);
+    border-color: var(--primary-dark, #e64a19);
+    color: white;
+}
+
+@media (max-width: 600px) {
+    .btn-refresh span,
+    .btn-preview span {
+        display: none;
+    }
+    .btn-refresh,
+    .btn-preview {
+        padding: 7px 9px;
+    }
+}

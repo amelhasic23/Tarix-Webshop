@@ -8,7 +8,8 @@ const FileStore = require('session-file-store')(session);
 const sessionStore = new FileStore({
     path: path.join(__dirname, 'database', 'sessions'),
     ttl: 86400, // 24 hours
-    retries: 0
+    retries: 3,          // allow Windows atomic-rename retries (EPERM fix)
+    reapInterval: 3600,  // reap expired sessions hourly to reduce file lock contention
 });
 console.log('✅ Using file session store');
 
@@ -141,6 +142,9 @@ app.get('/admin/dashboard', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Error:', err);
+    if (res.headersSent) {
+        return next(err);
+    }
     res.status(err.status || 500).json({
         error: err.message || 'Internal server error'
     });

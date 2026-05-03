@@ -8,7 +8,14 @@ const fs = require('fs');
 // Get all categories
 router.get('/', isAuthenticated, async (req, res) => {
     try {
-        const categories = await all('SELECT * FROM categories ORDER BY order_position ASC, id ASC');
+        const categories = await all(
+            `SELECT c.id, c.name, c.icon_path, c.parent_id, c.order_position, c.created_at,
+                    COUNT(p.id) as product_count
+             FROM categories c
+             LEFT JOIN products p ON p.category_id = c.id
+             GROUP BY c.id
+             ORDER BY c.order_position ASC, c.id ASC`
+        );
         res.json(categories);
     } catch (error) {
         console.error('Error fetching categories:', error);
@@ -19,7 +26,15 @@ router.get('/', isAuthenticated, async (req, res) => {
 // Get single category
 router.get('/:id', isAuthenticated, async (req, res) => {
     try {
-        const category = await get('SELECT * FROM categories WHERE id = ?', [req.params.id]);
+        const category = await get(
+            `SELECT c.id, c.name, c.icon_path, c.parent_id, c.order_position, c.created_at,
+                    COUNT(p.id) as product_count
+             FROM categories c
+             LEFT JOIN products p ON p.category_id = c.id
+             WHERE c.id = ?
+             GROUP BY c.id`,
+            [req.params.id]
+        );
         if (!category) {
             return res.status(404).json({ error: 'Category not found' });
         }
@@ -72,7 +87,7 @@ router.put('/:id', isAuthenticated, upload.single('icon'), async (req, res) => {
 
         if (req.file) {
             if (existingCategory.icon_path && fs.existsSync(existingCategory.icon_path)) {
-                fs.unlinkSync(existingCategory.icon_path);
+                try { fs.unlinkSync(existingCategory.icon_path); } catch (e) { console.warn('Could not delete old icon:', e.message); }
             }
             icon_path = `./${req.file.path.replace(/\\/g, '/')}`;
         }
@@ -103,7 +118,7 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
 
         // Delete icon file
         if (category.icon_path && fs.existsSync(category.icon_path)) {
-            fs.unlinkSync(category.icon_path);
+            try { fs.unlinkSync(category.icon_path); } catch (e) { console.warn('Could not delete icon:', e.message); }
         }
 
         await run('DELETE FROM categories WHERE id = ?', [req.params.id]);

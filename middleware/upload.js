@@ -14,16 +14,17 @@ const storage = multer.diskStorage({
     destination: function(req, file, cb) {
         let uploadPath = 'Images/';
 
-        // Determine upload folder based on route
-        if (req.path.includes('banners')) {
+        // Determine upload folder based on route (use originalUrl since req.path is '/' in subrouters)
+        const routePath = req.originalUrl || req.path;
+        if (routePath.includes('banners')) {
             uploadPath += 'banners/';
-        } else if (req.path.includes('products')) {
+        } else if (routePath.includes('products')) {
             uploadPath += 'products/';
-        } else if (req.path.includes('testimonials')) {
+        } else if (routePath.includes('testimonials')) {
             uploadPath += 'testimonials/';
-        } else if (req.path.includes('cta')) {
+        } else if (routePath.includes('cta')) {
             uploadPath += 'cta/';
-        } else if (req.path.includes('categories')) {
+        } else if (routePath.includes('categories')) {
             uploadPath += 'icons/';
         } else {
             uploadPath += 'uploads/';

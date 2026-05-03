@@ -98,7 +98,6 @@ const translations = {
         totalOrders: 'Total Orders',
         newsletterSubscribers: 'Newsletter Subscribers',
         recentOrders: 'Recent Orders',
-        addNewBanner: 'Add New Banner',
         addNewCategory: 'Add New Category',
         addNewProduct: 'Add New Product',
         addNewTestimonial: 'Add New Testimonial',
@@ -195,7 +194,6 @@ const translations = {
         totalOrders: 'Bestellungen Gesamt',
         newsletterSubscribers: 'Newsletter-Abonnenten',
         recentOrders: 'Letzte Bestellungen',
-        addNewBanner: 'Neues Banner hinzufügen',
         addNewCategory: 'Neue Kategorie hinzufügen',
         addNewProduct: 'Neues Produkt hinzufügen',
         addNewTestimonial: 'Neue Bewertung hinzufügen',
@@ -292,7 +290,6 @@ const translations = {
         totalOrders: 'Ukupno Narudžbi',
         newsletterSubscribers: 'Newsletter Pretplatnici',
         recentOrders: 'Nedavne Narudžbe',
-        addNewBanner: 'Dodaj Novi Baner',
         addNewCategory: 'Dodaj Novu Kategoriju',
         addNewProduct: 'Dodaj Novi Proizvod',
         addNewTestimonial: 'Dodaj Novu Recenziju',
@@ -557,46 +554,6 @@ function seedDefaultData() {
         console.log('[Admin] Seeded default CTA');
     }
 
-    // Initialize empty arrays if not present or invalid
-    // Seed banners if empty
-    const existingBanners = safeJsonParse(localStorage.getItem(STORE_KEYS.BANNERS), null);
-    if (!existingBanners || (Array.isArray(existingBanners) && existingBanners.length === 0)) {
-        const defaultBanners = [
-            {
-                id: 1,
-                subtitle: 'Trending Item',
-                title: 'Women\'s Latest Fashion Sale',
-                text: 'Up to 50% off on selected items',
-                price: 'Starting at 29 BAM',
-                image_path: './assets/images/banner-1.jpg',
-                active: 1,
-                created_at: new Date().toISOString()
-            },
-            {
-                id: 2,
-                subtitle: 'Trending Accessories',
-                title: 'Modern Sunglasses',
-                text: 'New collection available',
-                price: 'Starting at 19 BAM',
-                image_path: './assets/images/banner-2.jpg',
-                active: 1,
-                created_at: new Date().toISOString()
-            },
-            {
-                id: 3,
-                subtitle: 'Sale Offer',
-                title: 'New Fashion Summer Sale',
-                text: 'Limited time offer',
-                price: 'Starting at 39 BAM',
-                image_path: './assets/images/banner-3.jpg',
-                active: 1,
-                created_at: new Date().toISOString()
-            }
-        ];
-        localStorage.setItem(STORE_KEYS.BANNERS, JSON.stringify(defaultBanners));
-        console.log('[Admin] Seeded default banners:', defaultBanners.length);
-    }
-
     // Seed products if empty
     const existingProducts = safeJsonParse(localStorage.getItem(STORE_KEYS.PRODUCTS), null);
     if (!existingProducts || (Array.isArray(existingProducts) && existingProducts.length === 0)) {
@@ -770,14 +727,6 @@ function setupEventListeners() {
     });
 
     // Add buttons
-    const addBannerBtn = document.getElementById('addBannerBtn');
-    if (addBannerBtn) {
-        addBannerBtn.addEventListener('click', () => showBannerForm());
-        console.log('[Admin] Banner button listener attached');
-    } else {
-        console.warn('[Admin] addBannerBtn not found');
-    }
-
     const addCategoryBtn = document.getElementById('addCategoryBtn');
     if (addCategoryBtn) {
         addCategoryBtn.addEventListener('click', () => showCategoryForm());
@@ -809,6 +758,12 @@ function setupEventListeners() {
         console.log('[Admin] Order filter listener attached');
     } else {
         console.warn('[Admin] orderStatusFilter not found');
+    }
+
+    // Refresh button
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', refreshCurrentSection);
     }
 
     console.log('[Admin] Event listeners setup complete');
@@ -919,9 +874,6 @@ async function loadSectionData(section) {
         case 'dashboard':
             loadDashboard();
             break;
-        case 'banners':
-            loadBanners();
-            break;
         case 'categories':
             loadCategories();
             break;
@@ -948,33 +900,29 @@ async function loadDashboard() {
     console.log('[Admin] Loading dashboard...');
     try {
         // Fetch all data in parallel from API
-        const [products, orders, subscribers, categories, banners] = await Promise.all([
+        const [products, orders, subscribers, categories] = await Promise.all([
             api('/products'),
             api('/orders'),
             api('/newsletter/subscribers'),
-            api('/categories'),
-            api('/banners')
+            api('/categories')
         ]);
 
         console.log('[Admin] Stats:', {
             products: products.length,
             orders: orders.length,
             subscribers: subscribers.length,
-            categories: categories.length,
-            banners: banners.length
+            categories: categories.length
         });
 
         const totalProductsEl = document.getElementById('totalProducts');
         const totalOrdersEl = document.getElementById('totalOrders');
         const totalSubscribersEl = document.getElementById('totalSubscribers');
         const totalCategoriesEl = document.getElementById('totalCategories');
-        const totalBannersEl = document.getElementById('totalBanners');
 
         if (totalProductsEl) totalProductsEl.textContent = products.length;
         if (totalOrdersEl) totalOrdersEl.textContent = orders.length;
         if (totalSubscribersEl) totalSubscribersEl.textContent = subscribers.length;
         if (totalCategoriesEl) totalCategoriesEl.textContent = categories.length;
-        if (totalBannersEl) totalBannersEl.textContent = banners.length;
 
     // Show recent orders
     const recentOrders = orders.slice(0, 10);
@@ -1015,151 +963,6 @@ async function loadDashboard() {
     }
 }
 
-// ===== BANNERS =====
-async function loadBanners() {
-    try {
-        const banners = await api('/banners');
-
-        const bannersHTML = banners.map(banner => `
-            <div class="item-card">
-                <img src="${escapeHTML(banner.image_path)}" alt="${escapeHTML(banner.title)}">
-                <div class="item-card-content">
-                    <h3>${escapeHTML(banner.title)}</h3>
-                    <p><strong>${t('subtitle')}:</strong> ${escapeHTML(banner.subtitle)}</p>
-                    <p><strong>${t('price')}:</strong> ${escapeHTML(banner.price) || 'N/A'}</p>
-                    <p><strong>${t('status')}:</strong> ${banner.active ? t('active') : t('inactive')}</p>
-                    <div class="item-actions">
-                        <button class="btn-success" onclick="editBanner(${banner.id})">${t('edit')}</button>
-                        <button class="btn-danger" onclick="deleteBanner(${banner.id})">${t('delete')}</button>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-
-        document.getElementById('bannersListContainer').innerHTML = bannersHTML || `<p>${t('noItemsFound')}</p>`;
-    } catch (error) {
-        console.error('Error loading banners:', error);
-        showNotification('Failed to load banners', true);
-    }
-}
-
-// Event listener attached in setupEventListeners()
-
-function showBannerForm(banner = null) {
-    const formHTML = `
-        <h2>${banner ? t('edit') : t('addNewBanner')}</h2>
-        <form id="bannerForm">
-            <input type="hidden" id="bannerId" value="${banner ? banner.id : ''}">
-
-            <div class="form-group">
-                <label>${t('subtitle')}</label>
-                <input type="text" id="bannerSubtitle" value="${banner ? banner.subtitle : ''}" required>
-            </div>
-
-            <div class="form-group">
-                <label>${t('title')}</label>
-                <input type="text" id="bannerTitle" value="${banner ? banner.title : ''}" required>
-            </div>
-
-            <div class="form-group">
-                <label>${t('text')}</label>
-                <input type="text" id="bannerText" value="${banner ? banner.text || '' : ''}">
-            </div>
-
-            <div class="form-group">
-                <label>${t('price')}</label>
-                <input type="text" id="bannerPrice" value="${banner ? banner.price || '' : ''}">
-            </div>
-
-            <div class="form-group">
-                <label>${t('image')}</label>
-                <input type="file" id="bannerImage" accept="image/*" ${banner ? '' : 'required'}>
-                ${banner ? `<div class="image-preview"><img src="${banner.image_path}"></div>` : ''}
-            </div>
-
-            <div class="form-checkbox">
-                <input type="checkbox" id="bannerActive" ${!banner || banner.active ? 'checked' : ''}>
-                <label for="bannerActive">${t('active')}</label>
-            </div>
-
-            <button type="submit" class="btn-primary" style="margin-top: 15px;">${t('save')}</button>
-        </form>
-    `;
-
-    openModal(formHTML);
-
-    document.getElementById('bannerForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        await saveBanner();
-    });
-}
-
-async function saveBanner() {
-    const bannerId = document.getElementById('bannerId').value;
-
-    const formData = new FormData();
-    formData.append('subtitle', document.getElementById('bannerSubtitle').value);
-    formData.append('title', document.getElementById('bannerTitle').value);
-    formData.append('text', document.getElementById('bannerText').value || '');
-    formData.append('price', document.getElementById('bannerPrice').value || '');
-    formData.append('active', document.getElementById('bannerActive').checked ? '1' : '0');
-
-    const imageFile = document.getElementById('bannerImage').files[0];
-    if (imageFile) {
-        formData.append('image', imageFile);
-    } else if (!bannerId) {
-        showNotification('Please select an image', true);
-        return;
-    }
-
-    try {
-        const url = bannerId ? `/api/banners/${bannerId}` : '/api/banners';
-        const method = bannerId ? 'PUT' : 'POST';
-
-        const response = await fetch(url, {
-            method: method,
-            credentials: 'include',
-            body: formData
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || 'Failed to save banner');
-        }
-
-        showNotification(t('successfullySaved'));
-        closeModal();
-        loadBanners();
-    } catch (error) {
-        console.error('Error saving banner:', error);
-        showNotification(error.message || 'Failed to save banner', true);
-    }
-}
-
-async function editBanner(id) {
-    try {
-        const banner = await api(`/banners/${id}`);
-        if (banner) showBannerForm(banner);
-    } catch (error) {
-        console.error('Error loading banner:', error);
-        showNotification('Failed to load banner', true);
-    }
-}
-
-async function deleteBanner(id) {
-    if (!confirm(t('areYouSure'))) return;
-
-    try {
-        await api(`/banners/${id}`, { method: 'DELETE' });
-        showNotification(t('successfullyDeleted'));
-        loadBanners();
-    } catch (error) {
-        console.error('Error deleting banner:', error);
-        showNotification('Failed to delete banner', true);
-    }
-}
-
 // ===== CATEGORIES =====
 async function loadCategories() {
     try {
@@ -1176,6 +979,7 @@ async function loadCategories() {
                         <div class="item-actions">
                             <button class="btn-success" onclick="editCategory(${category.id})">Edit</button>
                             <button class="btn-danger" onclick="deleteCategory(${category.id})">Delete</button>
+                            <button class="btn-primary" onclick="addProductToCategory(${category.id})">Add Product</button>
                         </div>
                     </div>
                 </div>
@@ -1217,7 +1021,7 @@ function showCategoryForm(category = null) {
     document.getElementById('categoryForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         await saveCategory();
-    });
+    }, { once: true });
 }
 
 async function saveCategory() {
@@ -1266,9 +1070,12 @@ async function editCategory(id) {
     }
 }
 
+function addProductToCategory(categoryId) {
+    showProductForm(null, categoryId);
+}
+
 async function deleteCategory(id) {
     if (!confirm(t('areYouSure'))) return;
-
     try {
         await api(`/categories/${id}`, { method: 'DELETE' });
         showNotification(t('successfullyDeleted'));
@@ -1314,9 +1121,9 @@ async function loadProducts() {
 
 // Event listener attached in setupEventListeners()
 
-function showProductForm(product = null) {
+function showProductForm(product = null, preSelectedCategoryId = null) {
     const categoriesOptions = categoriesCache.map(cat =>
-        `<option value="${cat.id}" ${product && product.category_id === cat.id ? 'selected' : ''}>${cat.name}</option>`
+        `<option value="${cat.id}" ${product && product.category_id === cat.id ? 'selected' : (preSelectedCategoryId && Number(preSelectedCategoryId) === cat.id ? 'selected' : '')}>${cat.name}</option>`
     ).join('');
 
     const formHTML = `
@@ -1387,7 +1194,7 @@ function showProductForm(product = null) {
     document.getElementById('productForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         await saveProduct();
-    });
+    }, { once: true });
 }
 
 async function saveProduct() {
@@ -1547,7 +1354,7 @@ function showTestimonialForm(testimonial = null) {
     document.getElementById('testimonialForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         await saveTestimonial();
-    });
+    }, { once: true });
 }
 
 async function saveTestimonial() {
@@ -1661,7 +1468,7 @@ async function loadCTA() {
         document.getElementById('ctaForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             await saveCTA();
-        });
+        }, { once: true });
     } catch (error) {
         console.error('Error loading CTA:', error);
         showNotification('Failed to load CTA content', true);
@@ -1801,8 +1608,8 @@ async function loadOrders() {
                         ${orders.map(order => `
                             <tr>
                                 <td>${escapeHTML(order.order_number)}</td>
-                                <td>${escapeHTML(order.customer_name || '')}</td>
-                                <td>${escapeHTML(order.customer_email || '')}</td>
+                                <td>${escapeHTML(((order.customer_data?.firstName || '') + ' ' + (order.customer_data?.lastName || '')).trim())}</td>
+                                <td>${escapeHTML(order.customer_data?.email || '')}</td>
                                 <td>${new Date(order.created_at).toLocaleDateString()}</td>
                                 <td>${order.total} BAM</td>
                                 <td><span class="status-badge status-${order.status}" data-translate="${order.status}">${t(order.status)}</span></td>
@@ -1835,10 +1642,10 @@ async function viewOrder(id) {
             <h2>${t('orderDetails')} - ${escapeHTML(order.order_number)}</h2>
             <div>
                 <h3>${t('customerInformation')}</h3>
-                <p><strong>${t('name')}:</strong> ${escapeHTML(order.customer_name || '')}</p>
-                <p><strong>${t('email')}:</strong> ${escapeHTML(order.customer_email || '')}</p>
-                <p><strong>${t('phone')}:</strong> ${escapeHTML(order.customer_phone || '')}</p>
-                <p><strong>${t('address')}:</strong> ${escapeHTML(order.shipping_address || '')}</p>
+                <p><strong>${t('name')}:</strong> ${escapeHTML(((order.customer_data?.firstName || '') + ' ' + (order.customer_data?.lastName || '')).trim())}</p>
+                <p><strong>${t('email')}:</strong> ${escapeHTML(order.customer_data?.email || '')}</p>
+                <p><strong>${t('phone')}:</strong> ${escapeHTML(order.customer_data?.phone || '')}</p>
+                <p><strong>${t('address')}:</strong> ${escapeHTML([order.customer_data?.address, order.customer_data?.city, order.customer_data?.zipCode].filter(Boolean).join(', '))}</p>
 
                 <h3>${t('orderSummary')}</h3>
                 <p><strong>${t('total')}:</strong> ${order.total} BAM</p>
@@ -1888,14 +1695,13 @@ async function updateOrderStatus(id, currentStatus) {
             console.error('Error updating order status:', error);
             showNotification('Failed to update order status', true);
         }
-    });
+    }, { once: true });
 }
 
 // Make functions global
-window.editBanner = editBanner;
-window.deleteBanner = deleteBanner;
 window.editCategory = editCategory;
 window.deleteCategory = deleteCategory;
+window.addProductToCategory = addProductToCategory;
 window.editProduct = editProduct;
 window.deleteProduct = deleteProduct;
 window.editTestimonial = editTestimonial;
@@ -1904,3 +1710,21 @@ window.giveDiscount = giveDiscount;
 window.deleteSubscriber = deleteSubscriber;
 window.viewOrder = viewOrder;
 window.updateOrderStatus = updateOrderStatus;
+
+// ===== REFRESH CURRENT SECTION =====
+function refreshCurrentSection() {
+    const sectionLoaders = {
+        dashboard: loadDashboard,
+        categories: loadCategories,
+        products: loadProducts,
+        testimonials: loadTestimonials,
+        cta: loadCTA,
+        newsletter: loadNewsletter,
+        orders: loadOrders
+    };
+    const loader = sectionLoaders[currentSection];
+    if (loader) {
+        showNotification(t('refreshing') || 'Refreshing...');
+        loader();
+    }
+}

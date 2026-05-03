@@ -58,6 +58,19 @@ try {
     console.error('❌ Error minifying JS:', e.message);
 }
 
+// Minify swiper-init.js
+try {
+    const swiperJS = fs.readFileSync('swiper-init.js', 'utf8');
+    const minifiedSwiperJS = minifyJS(swiperJS);
+    fs.writeFileSync('swiper-init.min.js', minifiedSwiperJS);
+    console.log(`✅ swiper-init.js minified`);
+    console.log(`   Original: ${(swiperJS.length / 1024).toFixed(2)} KB`);
+    console.log(`   Minified: ${(minifiedSwiperJS.length / 1024).toFixed(2)} KB`);
+    console.log(`   Saved: ${(((swiperJS.length - minifiedSwiperJS.length) / swiperJS.length) * 100).toFixed(1)}%\n`);
+} catch (e) {
+    console.error('❌ Error minifying swiper-init.js:', e.message);
+}
+
 // Minify HTML
 try {
     const html = fs.readFileSync('index.html', 'utf8');
@@ -75,4 +88,5 @@ console.log('🎉 Minification complete!');
 console.log('\n📁 Minified files created:');
 console.log('   - index.min.html');
 console.log('   - index.min.js');
+console.log('   - swiper-init.min.js');
 console.log('   - index.min.css');

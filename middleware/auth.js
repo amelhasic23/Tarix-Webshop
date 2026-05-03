@@ -5,6 +5,7 @@ function isAuthenticated(req, res, next) {
         return next();
     }
     res.status(401).json({ error: 'Unauthorized. Please log in.' });
+    return;
 }
 
 function isNotAuthenticated(req, res, next) {

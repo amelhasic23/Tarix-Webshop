@@ -24,10 +24,6 @@
                 <ion-icon name="grid-outline"></ion-icon>
                 <span data-translate="dashboard">Dashboard</span>
             </a>
-            <a href="#" class="menu-item" data-section="banners">
-                <ion-icon name="images-outline"></ion-icon>
-                <span data-translate="banners">Banners</span>
-            </a>
             <a href="#" class="menu-item" data-section="categories">
                 <ion-icon name="folder-outline"></ion-icon>
                 <span data-translate="categories">Categories</span>
@@ -65,6 +61,14 @@
         <header class="header">
             <h1 id="pageTitle">Dashboard</h1>
             <div class="header-right">
+                <button class="btn-refresh" id="refreshBtn" title="Refresh current section">
+                    <ion-icon name="refresh-outline"></ion-icon>
+                    <span>Refresh</span>
+                </button>
+                <a href="/" target="_blank" class="btn-preview" id="previewBtn" title="Open website in new tab">
+                    <ion-icon name="open-outline"></ion-icon>
+                    <span>View Website</span>
+                </a>
                 <select id="languageSelector" class="language-selector">
                     <option value="en">English</option>
                     <option value="de">Deutsch</option>
@@ -110,27 +114,12 @@
                             <p data-translate="categories">Categories</p>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <ion-icon name="images-outline"></ion-icon>
-                        <div class="stat-info">
-                            <h3 id="totalBanners">0</h3>
-                            <p data-translate="banners">Banners</p>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="recent-orders">
                     <h2 data-translate="recentOrders">Recent Orders</h2>
                     <div id="recentOrdersList"></div>
                 </div>
-            </section>
-
-            <!-- Banners Section -->
-            <section id="banners-section" class="section">
-                <button class="btn-primary" id="addBannerBtn">
-                    <ion-icon name="add-outline"></ion-icon> Add New Banner
-                </button>
-                <div id="bannersListContainer" class="items-grid"></div>
             </section>
 
             <!-- Categories Section -->

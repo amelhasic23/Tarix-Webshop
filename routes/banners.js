@@ -76,7 +76,7 @@ router.put('/:id', isAuthenticated, upload.single('image'), async (req, res) => 
         if (req.file) {
             // Delete old image if it exists
             if (existingBanner.image_path && fs.existsSync(existingBanner.image_path)) {
-                fs.unlinkSync(existingBanner.image_path);
+                try { fs.unlinkSync(existingBanner.image_path); } catch (e) { console.warn('Could not delete old image:', e.message); }
             }
             image_path = `./${req.file.path.replace(/\\/g, '/')}`;
         }
@@ -104,7 +104,7 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
 
         // Delete image file
         if (banner.image_path && fs.existsSync(banner.image_path)) {
-            fs.unlinkSync(banner.image_path);
+            try { fs.unlinkSync(banner.image_path); } catch (e) { console.warn('Could not delete image:', e.message); }
         }
 
         await run('DELETE FROM banners WHERE id = ?', [req.params.id]);

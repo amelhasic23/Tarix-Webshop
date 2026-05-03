@@ -72,7 +72,7 @@ router.put('/:id', isAuthenticated, upload.single('image'), async (req, res) => 
 
         if (req.file) {
             if (existingTestimonial.image_path && fs.existsSync(existingTestimonial.image_path)) {
-                fs.unlinkSync(existingTestimonial.image_path);
+                try { fs.unlinkSync(existingTestimonial.image_path); } catch (e) { console.warn('Could not delete old image:', e.message); }
             }
             image_path = `./${req.file.path.replace(/\\/g, '/')}`;
         }
@@ -99,7 +99,7 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
         }
 
         if (testimonial.image_path && fs.existsSync(testimonial.image_path)) {
-            fs.unlinkSync(testimonial.image_path);
+            try { fs.unlinkSync(testimonial.image_path); } catch (e) { console.warn('Could not delete image:', e.message); }
         }
 
         await run('DELETE FROM testimonials WHERE id = ?', [req.params.id]);

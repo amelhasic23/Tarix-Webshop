@@ -29,7 +29,7 @@ router.put('/', isAuthenticated, upload.single('image'), async (req, res) => {
         if (req.file) {
             // Delete old image if exists
             if (cta && cta.image_path && fs.existsSync(cta.image_path)) {
-                fs.unlinkSync(cta.image_path);
+                try { fs.unlinkSync(cta.image_path); } catch (e) { console.warn('Could not delete old image:', e.message); }
             }
             image_path = `./${req.file.path.replace(/\\/g, '/')}`;
         }

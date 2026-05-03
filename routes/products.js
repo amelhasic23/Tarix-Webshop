@@ -104,7 +104,7 @@ router.put('/:id', isAuthenticated, upload.single('image'), async (req, res) => 
 
         if (req.file) {
             if (existingProduct.image_path && fs.existsSync(existingProduct.image_path)) {
-                fs.unlinkSync(existingProduct.image_path);
+                try { fs.unlinkSync(existingProduct.image_path); } catch (e) { console.warn('Could not delete old image:', e.message); }
             }
             image_path = `./${req.file.path.replace(/\\/g, '/')}`;
         }
@@ -147,7 +147,7 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
 
         // Delete image file
         if (product.image_path && fs.existsSync(product.image_path)) {
-            fs.unlinkSync(product.image_path);
+            try { fs.unlinkSync(product.image_path); } catch (e) { console.warn('Could not delete image:', e.message); }
         }
 
         await run('DELETE FROM products WHERE id = ?', [req.params.id]);

@@ -24,19 +24,19 @@
     --eerie-black: hsl(0, 0%, 10%);
 
     /* Legacy Compatibility (keep for existing code) */
-    --salmon-pink: hsl(14, 100%, 55%);
-    --sandy-brown: hsl(14, 100%, 50%);
-    --bitter-sweet: hsl(0, 85%, 55%);
-    --ocean-green: hsl(145, 70%, 42%);
-    --primary-dark: hsl(14, 100%, 45%);
-    --secondary-accent: hsl(14, 100%, 60%);
-    --success-green: hsl(145, 70%, 42%);
-    --warning-amber: hsl(45, 100%, 50%);
+    --salmon-pink: hsl(14, 100%, 40%);
+    --sandy-brown: hsl(14, 100%, 44%);
+    --bitter-sweet: hsl(0, 85%, 45%);
+    --ocean-green: hsl(145, 70%, 36%);
+    --primary-dark: hsl(14, 100%, 35%);
+    --secondary-accent: hsl(14, 100%, 48%);
+    --success-green: hsl(145, 70%, 36%);
+    --warning-amber: hsl(45, 100%, 42%);
     --light-bg: hsl(30, 20%, 97%);
     --card-shadow: hsla(0, 0%, 0%, 0.08);
-    --hover-overlay: hsla(14, 100%, 55%, 0.08);
-    --temu-orange: #FF5722;
-    --temu-orange-light: #FF7043;
+    --hover-overlay: hsla(14, 100%, 40%, 0.08);
+    --temu-orange: hsl(14, 100%, 40%);
+    --temu-orange-light: hsl(14, 100%, 46%);
     --temu-red: #E53935;
     --temu-gold: #FFB300;
     --temu-bg: #F5F5F5;
@@ -1142,7 +1142,7 @@ body.menu-open {
     visibility: hidden;
     -webkit-transition: 0.5s ease;
     transition: 0.5s ease;
-    z-index: 25;
+    z-index: 150;
 }
 .mobile-navigation-menu.active,
 .mobile-navigation-menu.open {
@@ -3546,6 +3546,27 @@ body.menu-open {
   color: var(--salmon-pink);
 }
 
+@media (max-width: 575px) {
+  .cta-container {
+    min-height: 180px;
+  }
+  .cta-content {
+    width: 90%;
+    max-width: 90%;
+    text-align: center;
+    padding: 12px 16px;
+  }
+  .cta-content .discount,
+  .cta-title,
+  .cta-text,
+  .cta-btn {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+  }
+}
+
 /* ==========================================
    PAGINATION
    ========================================== */
@@ -5095,6 +5116,8 @@ footer::before {
     position: relative;
     display: block;
     margin-bottom: 30px;
+    padding-left: 8px;
+    padding-right: 8px;
   }
 
   .product-box { min-width: 100%; }
@@ -8555,11 +8578,9 @@ body::-webkit-scrollbar-thumb {
     display: block;
   }
 
-  /* Hide cart and favorites icons on mobile */
+  /* Hide cart and favorites icons on mobile (show them in bottom nav instead) */
   .header-user-actions [data-favorites-open],
-  .header-user-actions [data-cart-open],
-  .mobile-bottom-navigation [data-favorites-open],
-  .mobile-bottom-navigation [data-cart-open] {
+  .header-user-actions [data-cart-open] {
     display: none !important;
   }
 
