@@ -39,13 +39,15 @@ async function api(endpoint, options = {}) {
     }
 
     const response = await fetch(url, config);
-    const data = await response.json();
 
     if (!response.ok) {
-        throw new Error(data.error || 'API request failed');
+        let errData = {};
+        try { errData = await response.json(); } catch {}
+        throw new Error(errData.error || 'API request failed');
     }
 
-    return data;
+    const text = await response.text();
+    return text ? JSON.parse(text) : {};
 }
 
 // ===== LOCALSTORAGE KEYS (kept for backward compatibility) =====
@@ -1024,6 +1026,15 @@ function showCategoryForm(category = null) {
     }, { once: true });
 }
 
+async function syncCategoriesToLocalStorage() {
+    try {
+        const cats = await api('/categories');
+        localStorage.setItem('tarix_categories', JSON.stringify(cats));
+    } catch (e) {
+        console.warn('[Admin] Could not sync categories to localStorage:', e);
+    }
+}
+
 async function saveCategory() {
     const categoryId = document.getElementById('categoryId').value;
 
@@ -1045,15 +1056,16 @@ async function saveCategory() {
             body: formData
         });
 
-        const data = await response.json();
-
         if (!response.ok) {
-            throw new Error(data.error || 'Failed to save category');
+            let errMsg = 'Failed to save category';
+            try { const e = await response.json(); errMsg = e.error || errMsg; } catch {}
+            throw new Error(errMsg);
         }
 
         showNotification(t('successfullySaved'));
         closeModal();
         loadCategories();
+        syncCategoriesToLocalStorage();
     } catch (error) {
         console.error('Error saving category:', error);
         showNotification(error.message || 'Failed to save category', true);
@@ -1080,6 +1092,7 @@ async function deleteCategory(id) {
         await api(`/categories/${id}`, { method: 'DELETE' });
         showNotification(t('successfullyDeleted'));
         loadCategories();
+        syncCategoriesToLocalStorage();
     } catch (error) {
         console.error('Error deleting category:', error);
         showNotification(error.message || 'Failed to delete category', true);

@@ -64,7 +64,11 @@ router.post('/', isAuthenticated, upload.single('icon'), async (req, res) => {
             [name, icon_path, parent_id || null, order_position || 0, 0]
         );
 
-        const newCategory = await get('SELECT * FROM categories WHERE id = ?', [result.id]);
+        const newCategory = (result.id ? await get('SELECT * FROM categories WHERE id = ?', [result.id]) : null)
+            || await get('SELECT * FROM categories WHERE name = ? ORDER BY id DESC LIMIT 1', [name]);
+        if (!newCategory) {
+            return res.status(500).json({ error: 'Failed to retrieve created category' });
+        }
         res.status(201).json(newCategory);
     } catch (error) {
         console.error('Error creating category:', error);

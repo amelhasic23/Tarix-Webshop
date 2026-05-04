@@ -55,11 +55,11 @@ async function run(sql, params = []) {
         saveDatabase();
 
         // Get last insert ID if applicable
-        const result = db.exec('SELECT last_insert_rowid() as id, changes() as changes');
-        const lastId = result[0]?.values[0]?.[0] || 0;
-        const changes = result[0]?.values[0]?.[1] || 0;
+        const metaResult = db.exec('SELECT last_insert_rowid(), changes()');
+        const lastId = metaResult.length > 0 ? (metaResult[0].values[0][0] || 0) : 0;
+        const changes = metaResult.length > 0 ? (metaResult[0].values[0][1] || 0) : 0;
 
-        return { id: lastId, changes: changes };
+        return { id: lastId, changes };
     } catch (error) {
         console.error('SQL run error:', error);
         throw error;

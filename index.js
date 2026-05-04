@@ -2457,7 +2457,7 @@ if (overlay) {
 }
 
 const accordionBtn = document.querySelectorAll("[data-accordion-btn]");
-const accordionContent = document.querySelectorAll("[data-accordion-content]");
+const accordionContent = document.querySelectorAll("[data-accordion]");
 
 for (let i = 0; i < accordionBtn.length; i++) {
     const handleAccordionToggle = function (e) {
@@ -2479,7 +2479,6 @@ for (let i = 0; i < accordionBtn.length; i++) {
     };
 
     accordionBtn[i].addEventListener("click", handleAccordionToggle);
-    accordionBtn[i].addEventListener("touchend", handleAccordionToggle);
 }
 
 // ========================================
@@ -2658,32 +2657,52 @@ function renderUserDropdown() {
 // DYNAMIC CONTENT LOADING FROM LOCALSTORAGE
 // ========================================
 
-// Load categories from localStorage (set by admin panel)
-async function loadCategoriesFromStorage() {
-    console.log('[Main] Loading categories from server API...');
-    const container = document.querySelector('.category-dropdown-content');
-    if (!container) {
-        console.log('[Main] ERROR: .category-dropdown-content not found!');
-        return;
+function getCategoryIcon(name) {
+    const slug = (name || '').toLowerCase();
+    const iconMap = [
+        ['electronic', 'flash-outline'],
+        ['phone', 'phone-portrait-outline'],
+        ['laptop', 'laptop-outline'],
+        ['tablet', 'tablet-portrait-outline'],
+        ['plumb', 'water-outline'],
+        ['pipe', 'git-branch-outline'],
+        ['faucet', 'water-outline'],
+        ['garden', 'leaf-outline'],
+        ['seed', 'flower-outline'],
+        ['fertiliz', 'flask-outline'],
+        ['tool', 'hammer-outline'],
+        ['automotive', 'car-outline'],
+        ['car', 'car-outline'],
+        ['dress', 'shirt-outline'],
+        ['jacket', 'body-outline'],
+        ['coat', 'body-outline'],
+        ['winter', 'snow-outline'],
+        ['watch', 'watch-outline'],
+        ['hat', 'glasses-outline'],
+        ['glass', 'glasses-outline'],
+        ['lens', 'glasses-outline'],
+        ['shirt', 'shirt-outline'],
+        ['short', 'resize-outline'],
+        ['jean', 'resize-outline'],
+        ['sport', 'barbell-outline'],
+        ['jewelry', 'diamond-outline'],
+        ['perfume', 'color-fill-outline'],
+    ];
+    for (const [key, icon] of iconMap) {
+        if (slug.includes(key)) return icon;
     }
+    return 'pricetag-outline';
+}
 
-    try {
-        const response = await fetch('/api/public/categories');
-        if (!response.ok) throw new Error('Failed to fetch categories');
+function applyCategoriesToDOM(categories) {
+    const container = document.querySelector('.category-dropdown-content');
 
-        const categories = await response.json();
-        console.log('[Main] Loaded', categories.length, 'categories from server');
-
-        if (categories.length === 0) {
-            console.log('[Main] No categories found, keeping static HTML');
-            return;
-        }
-
+    if (container && categories.length > 0) {
         container.innerHTML = categories.map(cat => {
             const safeName = sanitizeHTML(cat.name || '');
             const safeIcon = sanitizeURL(cat.icon_path || './assets/images/icons/dress.svg');
             const safeCount = sanitizeHTML(cat.product_count || 0);
-            const filterAttr = (cat.name || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
+            const filterAttr = (cat.name || '').toLowerCase().replace(/[^a-z0-9-]/g, '-');
             return `
             <div class="category-item" data-filter-category="${filterAttr}">
                 <div class="category-img-box">
@@ -2700,43 +2719,104 @@ async function loadCategoriesFromStorage() {
         `;
         }).join('');
 
-        // Populate #categoryFilter select with dynamic categories
-        const categoryFilter = document.getElementById('categoryFilter');
-        if (categoryFilter) {
-            const allOption = categoryFilter.querySelector('option[value="all"]');
-            categoryFilter.innerHTML = '';
-            if (allOption) {
-                categoryFilter.appendChild(allOption);
-            } else {
-                const opt = document.createElement('option');
-                opt.value = 'all';
-                opt.textContent = 'All Categories';
-                categoryFilter.appendChild(opt);
-            }
-            categories.forEach(cat => {
-                const filterAttr = (cat.name || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
-                const opt = document.createElement('option');
-                opt.value = filterAttr;
-                opt.textContent = sanitizeHTML(cat.name || '');
-                categoryFilter.appendChild(opt);
-            });
-        }
-
-        // Attach delegated click handler for dynamic category cards
         container.addEventListener('click', (e) => {
             const card = e.target.closest('.category-item[data-filter-category]');
             if (!card) return;
             const filterAttr = card.dataset.filterCategory;
             if (filterAttr && typeof filterProductsByCategory === 'function') {
                 filterProductsByCategory(filterAttr);
-                const categoriesDropdown = container.closest('.categories-dropdown, .category-dropdown-content')?.parentElement;
-                if (categoriesDropdown) categoriesDropdown.classList.remove('active');
             }
         }, { once: false });
+    }
+
+    // Rebuild header categories dropdown tree
+    const categoryTree = document.querySelector('#categoriesDropdown .category-tree');
+    if (categoryTree && categories.length > 0) {
+        const allItem = `
+            <li class="category-item">
+                <button class="category-toggle active" data-category="all" aria-expanded="false">
+                    <ion-icon name="apps-outline"></ion-icon>
+                    <span data-translate="allCategories">All Categories</span>
+                </button>
+            </li>`;
+        categoryTree.innerHTML = allItem + categories.map(cat => {
+            const slug = (cat.name || '').toLowerCase().replace(/[^a-z0-9-]/g, '-');
+            const icon = getCategoryIcon(cat.name);
+            const safeName = sanitizeHTML(cat.name || '');
+            return `
+            <li class="category-item">
+                <button class="category-toggle" data-category="${slug}" aria-expanded="false">
+                    <ion-icon name="${icon}"></ion-icon>
+                    <span>${safeName}</span>
+                </button>
+            </li>`;
+        }).join('');
+
+        categoryTree.addEventListener('click', (e) => {
+            const btn = e.target.closest('.category-toggle');
+            if (!btn) return;
+            categoryTree.querySelectorAll('.category-toggle').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const cat = btn.dataset.category;
+            if (typeof filterProductsByCategory === 'function') {
+                filterProductsByCategory(cat === 'all' ? 'all' : cat);
+            }
+            document.getElementById('categoriesDropdown')?.classList.remove('active');
+            document.getElementById('categoriesToggle')?.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    // Populate #categoryFilter select
+    const categoryFilter = document.getElementById('categoryFilter');
+    if (categoryFilter && categories.length > 0) {
+        categoryFilter.innerHTML = '';
+        const allOpt = document.createElement('option');
+        allOpt.value = 'all';
+        allOpt.setAttribute('data-translate', 'allCategories');
+        allOpt.textContent = 'All Categories';
+        categoryFilter.appendChild(allOpt);
+        categories.forEach(cat => {
+            const filterAttr = (cat.name || '').toLowerCase().replace(/[^a-z0-9-]/g, '-');
+            const opt = document.createElement('option');
+            opt.value = filterAttr;
+            opt.textContent = sanitizeHTML(cat.name || '');
+            categoryFilter.appendChild(opt);
+        });
+    }
+}
+
+// Load categories from localStorage (set by admin panel)
+async function loadCategoriesFromStorage() {
+    console.log('[Main] Loading categories from server API...');
+
+    try {
+        const response = await fetch('/api/public/categories');
+        if (!response.ok) throw new Error('Failed to fetch categories');
+
+        const categories = await response.json();
+        console.log('[Main] Loaded', categories.length, 'categories from server');
+
+        if (categories.length === 0) {
+            console.log('[Main] No categories found, keeping static HTML');
+            return;
+        }
+
+        applyCategoriesToDOM(categories);
 
     } catch (error) {
-        console.error('[Main] Error loading categories:', error);
-        // Keep static HTML as fallback
+        console.error('[Main] Error loading categories from API, trying localStorage:', error);
+        try {
+            const stored = localStorage.getItem('tarix_categories');
+            if (stored) {
+                const categories = JSON.parse(stored);
+                if (Array.isArray(categories) && categories.length > 0) {
+                    console.log('[Main] Using localStorage fallback,', categories.length, 'categories');
+                    applyCategoriesToDOM(categories);
+                }
+            }
+        } catch (fallbackError) {
+            console.error('[Main] localStorage fallback also failed:', fallbackError);
+        }
     }
 }
 
