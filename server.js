@@ -129,6 +129,11 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// Redirect /admin and /admin/ to login
+app.get(['/admin', '/admin/'], (req, res) => {
+    res.redirect('/admin/login');
+});
+
 // Serve admin login page
 app.get('/admin/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin', 'login.html'));
