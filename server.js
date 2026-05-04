@@ -48,7 +48,8 @@ const loginLimiter = rateLimit({
 const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:10000',
-    'https://tarix-shop.onrender.com'
+    'https://tarix-shop.onrender.com',
+    'https://tarix-webshop-eorv.onrender.com'
 ];
 
 app.use(cors({
