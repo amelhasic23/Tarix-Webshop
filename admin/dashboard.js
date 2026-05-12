@@ -180,7 +180,31 @@ const translations = {
         ctaContentUpdated: 'CTA content updated successfully!',
         failedToUpdateCTA: 'Failed to update CTA',
         errorSavingCTA: 'Error saving CTA',
-        cannotDeleteCategoryWithProducts: 'Cannot delete category with existing products. Please reassign or delete products first.'
+        cannotDeleteCategoryWithProducts: 'Cannot delete category with existing products. Please reassign or delete products first.',
+        addCategory: 'Add Category',
+        editCategory: 'Edit Category',
+        saveCategory: 'Save Category',
+        addProduct: 'Add Product',
+        editProduct: 'Edit Product',
+        saveProduct: 'Save Product',
+        addTestimonial: 'Add Testimonial',
+        editTestimonial: 'Edit Testimonial',
+        saveTestimonial: 'Save Testimonial',
+        iconLabel: 'Icon',
+        priceBAM: 'Price (BAM)',
+        oldPriceBAM: 'Old Price (BAM) - Optional',
+        ratingLabel: 'Rating (1-5)',
+        customerImageOptional: 'Customer Image (Optional)',
+        noIcon: 'No Icon',
+        noImage: 'No Image',
+        refreshing: 'Refreshing...',
+        failedToLoad: 'Failed to load',
+        failedToSave: 'Failed to save',
+        noCategoriesFound: 'No categories found.',
+        noProductsFound: 'No products found.',
+        noTestimonialsFound: 'No testimonials found.',
+        pleaseSelectImage: 'Please select an image',
+        storageLimit: 'Storage limit reached. Please delete some items.'
     },
     de: {
         dashboard: 'Dashboard',
@@ -276,7 +300,31 @@ const translations = {
         ctaContentUpdated: 'CTA-Inhalt erfolgreich aktualisiert!',
         failedToUpdateCTA: 'CTA konnte nicht aktualisiert werden',
         errorSavingCTA: 'Fehler beim Speichern des CTA',
-        cannotDeleteCategoryWithProducts: 'Kategorie kann nicht gelöscht werden, da Produkte existieren. Bitte zuerst Produkte verschieben oder löschen.'
+        cannotDeleteCategoryWithProducts: 'Kategorie kann nicht gelöscht werden, da Produkte existieren. Bitte zuerst Produkte verschieben oder löschen.',
+        addCategory: 'Kategorie hinzufügen',
+        editCategory: 'Kategorie bearbeiten',
+        saveCategory: 'Kategorie speichern',
+        addProduct: 'Produkt hinzufügen',
+        editProduct: 'Produkt bearbeiten',
+        saveProduct: 'Produkt speichern',
+        addTestimonial: 'Bewertung hinzufügen',
+        editTestimonial: 'Bewertung bearbeiten',
+        saveTestimonial: 'Bewertung speichern',
+        iconLabel: 'Symbol',
+        priceBAM: 'Preis (BAM)',
+        oldPriceBAM: 'Alter Preis (BAM) - Optional',
+        ratingLabel: 'Bewertung (1-5)',
+        customerImageOptional: 'Kundenbild (Optional)',
+        noIcon: 'Kein Symbol',
+        noImage: 'Kein Bild',
+        refreshing: 'Aktualisiere...',
+        failedToLoad: 'Laden fehlgeschlagen',
+        failedToSave: 'Speichern fehlgeschlagen',
+        noCategoriesFound: 'Keine Kategorien gefunden.',
+        noProductsFound: 'Keine Produkte gefunden.',
+        noTestimonialsFound: 'Keine Bewertungen gefunden.',
+        pleaseSelectImage: 'Bitte wählen Sie ein Bild',
+        storageLimit: 'Speicherlimit erreicht. Bitte löschen Sie einige Elemente.'
     },
     bs: {
         dashboard: 'Kontrolna tabla',
@@ -372,7 +420,31 @@ const translations = {
         ctaContentUpdated: 'CTA sadržaj uspješno ažuriran!',
         failedToUpdateCTA: 'Greška pri ažuriranju CTA',
         errorSavingCTA: 'Greška pri čuvanju CTA',
-        cannotDeleteCategoryWithProducts: 'Kategorija se ne može obrisati jer postoje proizvodi. Molimo prvo premjestite ili obrišite proizvode.'
+        cannotDeleteCategoryWithProducts: 'Kategorija se ne može obrisati jer postoje proizvodi. Molimo prvo premjestite ili obrišite proizvode.',
+        addCategory: 'Dodaj Kategoriju',
+        editCategory: 'Uredi Kategoriju',
+        saveCategory: 'Sačuvaj Kategoriju',
+        addProduct: 'Dodaj Proizvod',
+        editProduct: 'Uredi Proizvod',
+        saveProduct: 'Sačuvaj Proizvod',
+        addTestimonial: 'Dodaj Recenziju',
+        editTestimonial: 'Uredi Recenziju',
+        saveTestimonial: 'Sačuvaj Recenziju',
+        iconLabel: 'Ikona',
+        priceBAM: 'Cijena (BAM)',
+        oldPriceBAM: 'Stara Cijena (BAM) - Opcionalno',
+        ratingLabel: 'Ocjena (1-5)',
+        customerImageOptional: 'Slika Kupca (Opcionalno)',
+        noIcon: 'Bez Ikone',
+        noImage: 'Nema Slike',
+        refreshing: 'Osvježavanje...',
+        failedToLoad: 'Greška pri učitavanju',
+        failedToSave: 'Greška pri čuvanju',
+        noCategoriesFound: 'Nema pronađenih kategorija.',
+        noProductsFound: 'Nema pronađenih proizvoda.',
+        noTestimonialsFound: 'Nema pronađenih recenzija.',
+        pleaseSelectImage: 'Molimo odaberite sliku',
+        storageLimit: 'Dostignut limit pohrane. Molimo obrišite neke stavke.'
     }
 };
 
@@ -435,7 +507,7 @@ function safeSetItem(key, value) {
         return true;
     } catch (e) {
         if (e.name === 'QuotaExceededError') {
-            showNotification('Storage limit reached. Please delete some items.', true);
+            showNotification(t('storageLimit'), true);
         }
         console.error('Storage error:', e);
         return false;
@@ -961,7 +1033,7 @@ async function loadDashboard() {
         console.log('[Admin] Dashboard loaded successfully');
     } catch (error) {
         console.error('[Admin] Error loading dashboard:', error);
-        showNotification('Failed to load dashboard data', true);
+        showNotification(t('failedToLoad'), true);
     }
 }
 
@@ -974,24 +1046,24 @@ async function loadCategories() {
         if (currentSection === 'categories') {
             const categoriesHTML = categories.map(category => `
                 <div class="item-card">
-                    ${category.icon_path ? `<img src="${escapeHTML(category.icon_path)}" alt="${escapeHTML(category.name)}">` : '<div style="height:200px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;">No Icon</div>'}
+                    ${category.icon_path ? `<img src="${escapeHTML(category.icon_path)}" alt="${escapeHTML(category.name)}">` : `<div style="height:200px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;">${t('noIcon')}</div>`}
                     <div class="item-card-content">
                         <h3>${escapeHTML(category.name)}</h3>
-                        <p><strong>Products:</strong> ${category.product_count || 0}</p>
+                        <p><strong>${t('totalProducts')}:</strong> ${category.product_count || 0}</p>
                         <div class="item-actions">
-                            <button class="btn-success" onclick="editCategory(${category.id})">Edit</button>
-                            <button class="btn-danger" onclick="deleteCategory(${category.id})">Delete</button>
-                            <button class="btn-primary" onclick="addProductToCategory(${category.id})">Add Product</button>
+                            <button class="btn-success" onclick="editCategory(${category.id})">${t('edit')}</button>
+                            <button class="btn-danger" onclick="deleteCategory(${category.id})">${t('delete')}</button>
+                            <button class="btn-primary" onclick="addProductToCategory(${category.id})">${t('addProduct')}</button>
                         </div>
                     </div>
                 </div>
             `).join('');
 
-            document.getElementById('categoriesListContainer').innerHTML = categoriesHTML || '<p>No categories found.</p>';
+            document.getElementById('categoriesListContainer').innerHTML = categoriesHTML || `<p>${t('noCategoriesFound')}</p>`;
         }
     } catch (error) {
         console.error('Error loading categories:', error);
-        showNotification('Failed to load categories', true);
+        showNotification(t('failedToLoad'), true);
     }
 }
 
@@ -999,22 +1071,22 @@ async function loadCategories() {
 
 function showCategoryForm(category = null) {
     const formHTML = `
-        <h2>${category ? 'Edit' : 'Add'} Category</h2>
+        <h2>${category ? t('editCategory') : t('addCategory')}</h2>
         <form id="categoryForm">
             <input type="hidden" id="categoryId" value="${category ? category.id : ''}">
 
             <div class="form-group">
-                <label>Name</label>
+                <label>${t('name')}</label>
                 <input type="text" id="categoryName" value="${category ? category.name : ''}" required>
             </div>
 
             <div class="form-group">
-                <label>Icon</label>
+                <label>${t('iconLabel')}</label>
                 <input type="file" id="categoryIcon" accept="image/*">
                 ${category && category.icon_path ? `<div class="image-preview"><img src="${category.icon_path}"></div>` : ''}
             </div>
 
-            <button type="submit" class="btn-primary" style="margin-top: 15px;">Save Category</button>
+            <button type="submit" class="btn-primary" style="margin-top: 15px;">${t('saveCategory')}</button>
         </form>
     `;
 
@@ -1057,7 +1129,7 @@ async function saveCategory() {
         });
 
         if (!response.ok) {
-            let errMsg = 'Failed to save category';
+            let errMsg = t('failedToSave');
             try { const e = await response.json(); errMsg = e.error || errMsg; } catch {}
             throw new Error(errMsg);
         }
@@ -1068,7 +1140,7 @@ async function saveCategory() {
         syncCategoriesToLocalStorage();
     } catch (error) {
         console.error('Error saving category:', error);
-        showNotification(error.message || 'Failed to save category', true);
+        showNotification(error.message || t('failedToSave'), true);
     }
 }
 
@@ -1078,7 +1150,7 @@ async function editCategory(id) {
         if (category) showCategoryForm(category);
     } catch (error) {
         console.error('Error loading category:', error);
-        showNotification('Failed to load category', true);
+        showNotification(t('failedToLoad'), true);
     }
 }
 
@@ -1095,7 +1167,7 @@ async function deleteCategory(id) {
         syncCategoriesToLocalStorage();
     } catch (error) {
         console.error('Error deleting category:', error);
-        showNotification(error.message || 'Failed to delete category', true);
+        showNotification(error.message || t('failedToSave'), true);
     }
 }
 
@@ -1112,23 +1184,23 @@ async function loadProducts() {
                 <img src="${product.image_path}" alt="${escapeHTML(product.name)}">
                 <div class="item-card-content">
                     <h3>${escapeHTML(product.name)}</h3>
-                    <p><strong>Category:</strong> ${escapeHTML(category?.name || 'Uncategorized')}</p>
-                    <p><strong>Price:</strong> ${product.price} BAM ${product.old_price ? `<del>${product.old_price} BAM</del>` : ''}</p>
-                    <p><strong>Stock:</strong> ${product.stock}</p>
-                    <p>${product.best_seller ? '<span class="status-badge status-delivered">Best Seller</span>' : ''} ${product.featured ? '<span class="status-badge status-processing">Featured</span>' : ''}</p>
+                    <p><strong>${t('category')}:</strong> ${escapeHTML(category?.name || t('uncategorized'))}</p>
+                    <p><strong>${t('price')}:</strong> ${product.price} BAM ${product.old_price ? `<del>${product.old_price} BAM</del>` : ''}</p>
+                    <p><strong>${t('stock')}:</strong> ${product.stock}</p>
+                    <p>${product.best_seller ? `<span class="status-badge status-delivered">${t('bestSeller')}</span>` : ''} ${product.featured ? `<span class="status-badge status-processing">${t('featured')}</span>` : ''}</p>
                     <div class="item-actions">
-                        <button class="btn-success" onclick="editProduct(${product.id})">Edit</button>
-                        <button class="btn-danger" onclick="deleteProduct(${product.id})">Delete</button>
+                        <button class="btn-success" onclick="editProduct(${product.id})">${t('edit')}</button>
+                        <button class="btn-danger" onclick="deleteProduct(${product.id})">${t('delete')}</button>
                     </div>
                 </div>
             </div>
         `;
         }).join('');
 
-        document.getElementById('productsListContainer').innerHTML = productsHTML || '<p>No products found.</p>';
+        document.getElementById('productsListContainer').innerHTML = productsHTML || `<p>${t('noProductsFound')}</p>`;
     } catch (error) {
         console.error('Error loading products:', error);
-        showNotification('Failed to load products', true);
+        showNotification(t('failedToLoad'), true);
     }
 }
 
@@ -1140,65 +1212,65 @@ function showProductForm(product = null, preSelectedCategoryId = null) {
     ).join('');
 
     const formHTML = `
-        <h2>${product ? 'Edit' : 'Add'} Product</h2>
+        <h2>${product ? t('editProduct') : t('addProduct')}</h2>
         <form id="productForm">
             <input type="hidden" id="productId" value="${product ? product.id : ''}">
 
             <div class="form-group">
-                <label>Name</label>
+                <label>${t('name')}</label>
                 <input type="text" id="productName" value="${product ? product.name : ''}" required>
             </div>
 
             <div class="form-group">
-                <label>Category</label>
+                <label>${t('category')}</label>
                 <select id="productCategory">
-                    <option value="">Uncategorized</option>
+                    <option value="">${t('uncategorized')}</option>
                     ${categoriesOptions}
                 </select>
             </div>
 
             <div class="form-group">
-                <label>Price (BAM)</label>
+                <label>${t('priceBAM')}</label>
                 <input type="number" step="0.01" min="0" id="productPrice" value="${product ? product.price : ''}" required>
             </div>
 
             <div class="form-group">
-                <label>Old Price (BAM) - Optional</label>
+                <label>${t('oldPriceBAM')}</label>
                 <input type="number" step="0.01" min="0" id="productOldPrice" value="${product ? product.old_price || '' : ''}">
             </div>
 
             <div class="form-group">
-                <label>Discount %</label>
+                <label>${t('discount')}</label>
                 <input type="number" min="0" max="100" id="productDiscount" value="${product ? product.discount_percentage : 0}">
             </div>
 
             <div class="form-group">
-                <label>Description</label>
+                <label>${t('description')}</label>
                 <textarea id="productDescription">${product ? escapeHTML(product.description) || '' : ''}</textarea>
             </div>
 
             <div class="form-group">
-                <label>Stock</label>
+                <label>${t('stock')}</label>
                 <input type="number" min="0" id="productStock" value="${product ? product.stock : 0}" required>
             </div>
 
             <div class="form-group">
-                <label>Image</label>
+                <label>${t('image')}</label>
                 <input type="file" id="productImage" accept="image/*" ${product ? '' : 'required'}>
                 ${product ? `<div class="image-preview"><img src="${product.image_path}"></div>` : ''}
             </div>
 
             <div class="form-checkbox">
                 <input type="checkbox" id="productFeatured" ${product && product.featured ? 'checked' : ''}>
-                <label for="productFeatured">Featured</label>
+                <label for="productFeatured">${t('featured')}</label>
             </div>
 
             <div class="form-checkbox">
                 <input type="checkbox" id="productBestSeller" ${product && product.best_seller ? 'checked' : ''}>
-                <label for="productBestSeller">Best Seller</label>
+                <label for="productBestSeller">${t('bestSeller')}</label>
             </div>
 
-            <button type="submit" class="btn-primary" style="margin-top: 15px;">Save Product</button>
+            <button type="submit" class="btn-primary" style="margin-top: 15px;">${t('saveProduct')}</button>
         </form>
     `;
 
@@ -1228,7 +1300,7 @@ async function saveProduct() {
     if (imageFile) {
         formData.append('image', imageFile);
     } else if (!productId) {
-        showNotification('Please select an image', true);
+        showNotification(t('pleaseSelectImage'), true);
         return;
     }
 
@@ -1245,7 +1317,7 @@ async function saveProduct() {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.error || 'Failed to save product');
+            throw new Error(data.error || t('failedToSave'));
         }
 
         showNotification(t('successfullySaved'));
@@ -1253,7 +1325,7 @@ async function saveProduct() {
         loadProducts();
     } catch (error) {
         console.error('Error saving product:', error);
-        showNotification(error.message || 'Failed to save product', true);
+        showNotification(error.message || t('failedToSave'), true);
     }
 }
 
@@ -1275,7 +1347,7 @@ async function editProduct(id) {
         if (product) showProductForm(product);
     } catch (error) {
         console.error('Error loading product:', error);
-        showNotification('Failed to load product', true);
+        showNotification(t('failedToLoad'), true);
     }
 }
 
@@ -1288,7 +1360,7 @@ async function deleteProduct(id) {
         loadProducts();
     } catch (error) {
         console.error('Error deleting product:', error);
-        showNotification('Failed to delete product', true);
+        showNotification(t('failedToSave'), true);
     }
 }
 
@@ -1297,25 +1369,25 @@ function loadTestimonials() {
     api('/testimonials').then(testimonials => {
         const testimonialsHTML = testimonials.map(testimonial => `
             <div class="item-card">
-                ${testimonial.image_path ? `<img src="${escapeHTML(testimonial.image_path)}" alt="${escapeHTML(testimonial.customer_name)}">` : '<div style="height:200px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;">No Image</div>'}
+                ${testimonial.image_path ? `<img src="${escapeHTML(testimonial.image_path)}" alt="${escapeHTML(testimonial.customer_name)}">` : `<div style="height:200px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;">${t('noImage')}</div>`}
                 <div class="item-card-content">
                     <h3>${escapeHTML(testimonial.customer_name)}</h3>
-                    <p><strong>Role:</strong> ${escapeHTML(testimonial.customer_role) || 'Customer'}</p>
+                    <p><strong>${t('role')}:</strong> ${escapeHTML(testimonial.customer_role) || t('customer')}</p>
                     <p>${escapeHTML(testimonial.text?.substring(0, 100))}...</p>
-                    <p><strong>Rating:</strong> ${testimonial.rating}/5</p>
-                    <p><strong>Status:</strong> ${testimonial.active ? 'Active' : 'Inactive'}</p>
+                    <p><strong>${t('rating')}:</strong> ${testimonial.rating}/5</p>
+                    <p><strong>${t('status')}:</strong> ${testimonial.active ? t('active') : t('inactive')}</p>
                     <div class="item-actions">
-                        <button class="btn-success" onclick="editTestimonial(${testimonial.id})">Edit</button>
-                        <button class="btn-danger" onclick="deleteTestimonial(${testimonial.id})">Delete</button>
+                        <button class="btn-success" onclick="editTestimonial(${testimonial.id})">${t('edit')}</button>
+                        <button class="btn-danger" onclick="deleteTestimonial(${testimonial.id})">${t('delete')}</button>
                     </div>
                 </div>
             </div>
         `).join('');
 
-        document.getElementById('testimonialsListContainer').innerHTML = testimonialsHTML || '<p>No testimonials found.</p>';
+        document.getElementById('testimonialsListContainer').innerHTML = testimonialsHTML || `<p>${t('noTestimonialsFound')}</p>`;
     }).catch(error => {
         console.error('Error loading testimonials:', error);
-        showNotification('Failed to load testimonials', true);
+        showNotification(t('failedToLoad'), true);
     });
 }
 
@@ -1323,42 +1395,42 @@ function loadTestimonials() {
 
 function showTestimonialForm(testimonial = null) {
     const formHTML = `
-        <h2>${testimonial ? 'Edit' : 'Add'} Testimonial</h2>
+        <h2>${testimonial ? t('editTestimonial') : t('addTestimonial')}</h2>
         <form id="testimonialForm">
             <input type="hidden" id="testimonialId" value="${testimonial ? testimonial.id : ''}">
 
             <div class="form-group">
-                <label>Customer Name</label>
+                <label>${t('customerName')}</label>
                 <input type="text" id="testimonialName" value="${testimonial ? testimonial.customer_name : ''}" required>
             </div>
 
             <div class="form-group">
-                <label>Customer Role</label>
+                <label>${t('customerRole')}</label>
                 <input type="text" id="testimonialRole" value="${testimonial ? testimonial.customer_role || '' : ''}">
             </div>
 
             <div class="form-group">
-                <label>Testimonial Text</label>
+                <label>${t('testimonialText')}</label>
                 <textarea id="testimonialText" required>${testimonial ? testimonial.text : ''}</textarea>
             </div>
 
             <div class="form-group">
-                <label>Rating (1-5)</label>
+                <label>${t('ratingLabel')}</label>
                 <input type="number" min="1" max="5" id="testimonialRating" value="${testimonial ? testimonial.rating : 5}" required>
             </div>
 
             <div class="form-group">
-                <label>Customer Image (Optional)</label>
+                <label>${t('customerImageOptional')}</label>
                 <input type="file" id="testimonialImage" accept="image/*">
                 ${testimonial && testimonial.image_path ? `<div class="image-preview"><img src="${testimonial.image_path}"></div>` : ''}
             </div>
 
             <div class="form-checkbox">
                 <input type="checkbox" id="testimonialActive" ${!testimonial || testimonial.active ? 'checked' : ''}>
-                <label for="testimonialActive">Active</label>
+                <label for="testimonialActive">${t('active')}</label>
             </div>
 
-            <button type="submit" class="btn-primary" style="margin-top: 15px;">Save Testimonial</button>
+            <button type="submit" class="btn-primary" style="margin-top: 15px;">${t('saveTestimonial')}</button>
         </form>
     `;
 
@@ -1398,7 +1470,7 @@ async function saveTestimonial() {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.error || 'Failed to save testimonial');
+            throw new Error(data.error || t('failedToSave'));
         }
 
         showNotification(t('successfullySaved'));
@@ -1406,7 +1478,7 @@ async function saveTestimonial() {
         loadTestimonials();
     } catch (error) {
         console.error('Error saving testimonial:', error);
-        showNotification(error.message || 'Failed to save testimonial', true);
+        showNotification(error.message || t('failedToSave'), true);
     }
 }
 
@@ -1416,7 +1488,7 @@ async function editTestimonial(id) {
         if (testimonial) showTestimonialForm(testimonial);
     } catch (error) {
         console.error('Error loading testimonial:', error);
-        showNotification('Failed to load testimonial', true);
+        showNotification(t('failedToLoad'), true);
     }
 }
 
@@ -1429,7 +1501,7 @@ async function deleteTestimonial(id) {
         loadTestimonials();
     } catch (error) {
         console.error('Error deleting testimonial:', error);
-        showNotification('Failed to delete testimonial', true);
+        showNotification(t('failedToSave'), true);
     }
 }
 
@@ -1484,7 +1556,7 @@ async function loadCTA() {
         }, { once: true });
     } catch (error) {
         console.error('Error loading CTA:', error);
-        showNotification('Failed to load CTA content', true);
+        showNotification(t('failedToLoad'), true);
     }
 }
 
@@ -1510,14 +1582,14 @@ async function saveCTA() {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.error || 'Failed to save CTA');
+            throw new Error(data.error || t('failedToSave'));
         }
 
         showNotification(t('ctaContentUpdated'));
         loadCTA();
     } catch (error) {
         console.error('Error saving CTA:', error);
-        showNotification(error.message || 'Failed to save CTA', true);
+        showNotification(error.message || t('failedToSave'), true);
     }
 }
 
@@ -1559,7 +1631,7 @@ async function loadNewsletter() {
         document.getElementById('newsletterListContainer').innerHTML = subscribers.length > 0 ? tableHTML : `<p data-translate="noSubscribers">${t('noSubscribers')}</p>`;
     } catch (error) {
         console.error('Error loading newsletter:', error);
-        showNotification('Failed to load newsletter subscribers', true);
+        showNotification(t('failedToLoad'), true);
     }
 }
 
@@ -1576,7 +1648,7 @@ async function giveDiscount(id) {
         loadNewsletter();
     } catch (error) {
         console.error('Error giving discount:', error);
-        showNotification('Failed to assign discount', true);
+        showNotification(t('failedToSave'), true);
     }
 }
 
@@ -1589,7 +1661,7 @@ async function deleteSubscriber(id) {
         loadNewsletter();
     } catch (error) {
         console.error('Error deleting subscriber:', error);
-        showNotification('Failed to delete subscriber', true);
+        showNotification(t('failedToSave'), true);
     }
 }
 
@@ -1640,7 +1712,7 @@ async function loadOrders() {
         document.getElementById('ordersListContainer').innerHTML = orders.length > 0 ? tableHTML : `<p data-translate="noOrdersFound">${t('noOrdersFound')}</p>`;
     } catch (error) {
         console.error('Error loading orders:', error);
-        showNotification('Failed to load orders', true);
+        showNotification(t('failedToLoad'), true);
     }
 }
 
@@ -1670,7 +1742,7 @@ async function viewOrder(id) {
         openModal(modalHTML);
     } catch (error) {
         console.error('Error loading order:', error);
-        showNotification('Failed to load order details', true);
+        showNotification(t('failedToLoad'), true);
     }
 }
 
@@ -1706,7 +1778,7 @@ async function updateOrderStatus(id, currentStatus) {
             loadOrders();
         } catch (error) {
             console.error('Error updating order status:', error);
-            showNotification('Failed to update order status', true);
+            showNotification(t('failedToSave'), true);
         }
     }, { once: true });
 }
@@ -1737,7 +1809,7 @@ function refreshCurrentSection() {
     };
     const loader = sectionLoaders[currentSection];
     if (loader) {
-        showNotification(t('refreshing') || 'Refreshing...');
+        showNotification(t('refreshing'));
         loader();
     }
 }

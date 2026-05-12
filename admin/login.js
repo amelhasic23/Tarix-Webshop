@@ -1,3 +1,70 @@
+const loginTranslations = {
+    en: {
+        loginTitle: 'Tarix Admin',
+        loginSubtitle: 'Sign in to manage your store',
+        usernameLabel: 'Username',
+        passwordLabel: 'Password',
+        signInBtn: 'Sign In',
+        loginError: 'Invalid username or password.',
+        loginNetworkError: 'An error occurred. Please try again.',
+        loginRateLimitError: 'Too many login attempts. Please try again in 15 minutes.',
+        loginCopyright: '© 2026 Tarix. All rights reserved.'
+    },
+    de: {
+        loginTitle: 'Tarix Admin',
+        loginSubtitle: 'Melden Sie sich an, um Ihren Shop zu verwalten',
+        usernameLabel: 'Benutzername',
+        passwordLabel: 'Passwort',
+        signInBtn: 'Anmelden',
+        loginError: 'Ungültiger Benutzername oder Passwort.',
+        loginNetworkError: 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.',
+        loginRateLimitError: 'Zu viele Anmeldeversuche. Bitte warten Sie 15 Minuten.',
+        loginCopyright: '© 2026 Tarix. Alle Rechte vorbehalten.'
+    },
+    bs: {
+        loginTitle: 'Tarix Admin',
+        loginSubtitle: 'Prijavite se da upravljate trgovinom',
+        usernameLabel: 'Korisničko ime',
+        passwordLabel: 'Lozinka',
+        signInBtn: 'Prijava',
+        loginError: 'Neispravno korisničko ime ili lozinka.',
+        loginNetworkError: 'Došlo je do greške. Molimo pokušajte ponovo.',
+        loginRateLimitError: 'Previše pokušaja prijave. Molimo pokušajte za 15 minuta.',
+        loginCopyright: '© 2026 Tarix. Sva prava zadržana.'
+    }
+};
+
+let loginLang = localStorage.getItem('adminLanguage') || 'en';
+
+function applyLoginTranslations(lang) {
+    const tr = loginTranslations[lang] || loginTranslations['en'];
+    document.querySelectorAll('[data-translate]').forEach(el => {
+        const key = el.getAttribute('data-translate');
+        if (tr[key]) el.textContent = tr[key];
+    });
+    const select = document.getElementById('loginLangSelect');
+    if (select) select.value = lang;
+    document.documentElement.lang = lang;
+}
+
+function tLogin(key) {
+    return (loginTranslations[loginLang] || loginTranslations['en'])[key] || key;
+}
+
+// Language switcher
+const langSelect = document.getElementById('loginLangSelect');
+if (langSelect) {
+    langSelect.value = loginLang;
+    langSelect.addEventListener('change', () => {
+        loginLang = langSelect.value;
+        localStorage.setItem('adminLanguage', loginLang);
+        applyLoginTranslations(loginLang);
+    });
+}
+
+// Apply on page load
+applyLoginTranslations(loginLang);
+
 const loginForm = document.getElementById('loginForm');
 const errorMessage = document.getElementById('errorMessage');
 const loginBtn = document.getElementById('loginBtn');
@@ -60,7 +127,11 @@ loginForm.addEventListener('submit', async (e) => {
             }, 100);
         } else {
             // Login failed
-            errorMessage.textContent = data.error || 'Invalid username or password.';
+            if (response.status === 429) {
+                errorMessage.textContent = tLogin('loginRateLimitError');
+            } else {
+                errorMessage.textContent = data.error || tLogin('loginError');
+            }
             errorMessage.classList.add('show');
 
             // Reset button
@@ -70,7 +141,7 @@ loginForm.addEventListener('submit', async (e) => {
         }
     } catch (error) {
         console.error('Login error:', error);
-        errorMessage.textContent = 'An error occurred. Please try again.';
+        errorMessage.textContent = tLogin('loginNetworkError');
         errorMessage.classList.add('show');
 
         // Reset button

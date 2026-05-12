@@ -55,6 +55,20 @@ body {
     font-size: 15px;
 }
 
+.login-lang-switcher {
+    margin-top: 14px;
+}
+
+.login-lang-switcher select {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    background: #f8f8f8;
+    cursor: pointer;
+    color: #444;
+}
+
 .login-form {
     margin-bottom: 30px;
 }

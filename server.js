@@ -2,6 +2,11 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
+const fs = require('fs');
+
+// Ensure sessions directory exists before creating the session store
+const sessionsDir = path.join(__dirname, 'database', 'sessions');
+fs.mkdirSync(sessionsDir, { recursive: true });
 
 // Use file-based session store (no native modules)
 const FileStore = require('session-file-store')(session);
@@ -40,8 +45,10 @@ app.use('/api/', limiter);
 // Strict rate limit for login
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 5,
-    message: 'Too many login attempts, please try again later'
+    max: 10,
+    handler: (req, res) => {
+        res.status(429).json({ error: 'Too many login attempts. Please try again in 15 minutes.' });
+    }
 });
 
 // CORS
@@ -153,7 +160,7 @@ app.use((req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     const isProduction = process.env.NODE_ENV === 'production';
     const baseUrl = isProduction ? 'https://tarix-shop.onrender.com' : `http://localhost:${PORT}`;
 
@@ -164,6 +171,28 @@ app.listen(PORT, () => {
     console.log(`───────────────────────────────────`);
     console.log(`⚙️  Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`🌐 Port:       ${PORT}\n`);
+
+    // Auto-seed default admin if none exists
+    try {
+        const bcrypt = require('bcryptjs');
+        const { get, run, initDatabase } = require('./database/db');
+        await initDatabase();
+        const existingAdmin = await get('SELECT id FROM admins LIMIT 1', []);
+        if (!existingAdmin) {
+            const adminUsername = process.env.DEFAULT_ADMIN_USERNAME || 'admin';
+            const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || 'admin123';
+            const adminEmail = process.env.DEFAULT_ADMIN_EMAIL || 'admin@tarix.com';
+            const hashedPassword = await bcrypt.hash(adminPassword, 10);
+            await run(
+                'INSERT INTO admins (username, password_hash, email) VALUES (?, ?, ?)',
+                [adminUsername, hashedPassword, adminEmail]
+            );
+            console.log(`✅ Default admin created: ${adminUsername} / ${adminPassword}`);
+            console.log(`⚠️  Change the admin password after first login!\n`);
+        }
+    } catch (err) {
+        console.error('❌ Auto-seed admin error:', err.message);
+    }
 });
 
 // Graceful shutdown

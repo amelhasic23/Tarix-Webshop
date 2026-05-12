@@ -12,31 +12,38 @@
     <div class="login-container">
         <div class="login-card">
             <div class="login-header">
-                <h1>Tarix Admin</h1>
-                <p>Sign in to manage your store</p>
+                <h1 data-translate="loginTitle">Tarix Admin</h1>
+                <p data-translate="loginSubtitle">Sign in to manage your store</p>
+                <div class="login-lang-switcher">
+                    <select id="loginLangSelect" aria-label="Select language">
+                        <option value="en">EN</option>
+                        <option value="de">DE</option>
+                        <option value="bs">BS</option>
+                    </select>
+                </div>
             </div>
 
             <form id="loginForm" class="login-form">
                 <div class="form-group">
-                    <label for="username">Username</label>
+                    <label for="username" data-translate="usernameLabel">Username</label>
                     <input type="text" id="username" name="username" required autofocus>
                 </div>
 
                 <div class="form-group">
-                    <label for="password">Password</label>
+                    <label for="password" data-translate="passwordLabel">Password</label>
                     <input type="password" id="password" name="password" required>
                 </div>
 
                 <div id="errorMessage" class="error-message"></div>
 
                 <button type="submit" class="btn-login" id="loginBtn">
-                    <span id="loginText">Sign In</span>
+                    <span id="loginText" data-translate="signInBtn">Sign In</span>
                     <span id="loginLoader" class="loader" style="display: none;"></span>
                 </button>
             </form>
 
             <div class="login-footer">
-                <p>&copy; 2026 Tarix. All rights reserved.</p>
+                <p data-translate="loginCopyright">&copy; 2026 Tarix. All rights reserved.</p>
             </div>
         </div>
     </div>
