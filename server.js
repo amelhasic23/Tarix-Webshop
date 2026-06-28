@@ -144,6 +144,47 @@ app.get('/admin/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin', 'dashboard.html'));
 });
 
+// Image fallback: normalise legacy "/assets/images/..." paths to the real
+// "/Images/..." folder and serve a placeholder for any image that does not
+// exist on disk. This guarantees image requests resolve with 200 instead of
+// the JSON 404 below (which browsers reject and Lighthouse logs as errors).
+const IMAGE_EXT = /\.(?:png|jpe?g|webp|gif|svg|ico|avif)$/i;
+const placeholderImage = path.join(__dirname, 'Images', 'placeholder.svg');
+app.use((req, res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+
+    let urlPath;
+    try {
+        urlPath = decodeURIComponent(req.path);
+    } catch (e) {
+        return next();
+    }
+    if (!IMAGE_EXT.test(urlPath)) return next();
+
+    // Map the (non-existent) /assets/images folder to the real Images folder.
+    const rel = urlPath
+        .replace(/^\/assets\/images\//i, '/Images/')
+        .replace(/^\/+/, '');
+    const resolved = path.resolve(__dirname, rel);
+
+    // Serve the real file when it exists and stays inside the project root.
+    if (
+        (resolved === __dirname || resolved.startsWith(__dirname + path.sep)) &&
+        fs.existsSync(resolved) &&
+        fs.statSync(resolved).isFile()
+    ) {
+        return res.sendFile(resolved);
+    }
+
+    // Otherwise fall back to a neutral placeholder so the request still 200s.
+    if (fs.existsSync(placeholderImage)) {
+        res.type('image/svg+xml');
+        res.set('Cache-Control', 'public, max-age=86400');
+        return res.sendFile(placeholderImage);
+    }
+    return next();
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Error:', err);
