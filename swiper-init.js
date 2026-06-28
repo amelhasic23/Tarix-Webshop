@@ -3,58 +3,71 @@ document.addEventListener('DOMContentLoaded', function() {
     // SWIPER SLIDERS
     // ==========================================
 
-    // Initialize Testimonials Swiper
-    window.testimonialSwiper = new Swiper('.testimonial-cards-wrapper', {
-        loop: true,
-        slidesPerView: 1,
-        spaceBetween: 25,
-        centeredSlides: true,
-        autoHeight: false,
-        pagination: {
-            el: '.testimonial-cards-wrapper .swiper-pagination',
-            clickable: true,
-            dynamicBullets: true,
-        },
-        navigation: false,
-        breakpoints: {
-            640: {
-                slidesPerView: 2,
-                spaceBetween: 20,
-                centeredSlides: false,
+    // Initialize Testimonials Swiper.
+    // Creating a Swiper reads slide geometry (offsetWidth etc.), which forces a
+    // synchronous reflow. The testimonials carousel sits below the fold, so we
+    // defer initialization until it is about to enter the viewport — keeping the
+    // reflow off the initial load critical path. resizeObserver keeps it
+    // responsive afterwards (observer/observeParents removed to cut layout churn).
+    function initTestimonialSwiper() {
+        if (window.testimonialSwiper) return;
+        window.testimonialSwiper = new Swiper('.testimonial-cards-wrapper', {
+            loop: true,
+            slidesPerView: 1,
+            spaceBetween: 25,
+            centeredSlides: true,
+            autoHeight: false,
+            pagination: {
+                el: '.testimonial-cards-wrapper .swiper-pagination',
+                clickable: true,
+                dynamicBullets: true,
             },
-            1024: {
-                slidesPerView: 3,
-                spaceBetween: 25,
-                centeredSlides: false,
+            navigation: false,
+            breakpoints: {
+                640: {
+                    slidesPerView: 2,
+                    spaceBetween: 20,
+                    centeredSlides: false,
+                },
+                1024: {
+                    slidesPerView: 3,
+                    spaceBetween: 25,
+                    centeredSlides: false,
+                },
+                1400: {
+                    slidesPerView: 3,
+                    spaceBetween: 30,
+                    centeredSlides: false,
+                }
             },
-            1400: {
-                slidesPerView: 3,
-                spaceBetween: 30,
-                centeredSlides: false,
-            }
-        },
-        autoplay: {
-            delay: 5000,
-            disableOnInteraction: false,
-            pauseOnMouseEnter: true,
-        },
-        effect: 'slide',
-        speed: 600,
-        watchSlidesProgress: true,
-        observer: true,
-        observeParents: true,
-        resizeObserver: true,
-    });
-
-    // Force Swiper to recalculate slide widths after the full page
-    // layout is settled (fonts, images, CSS grid all resolved). Defer the
-    // update to the next animation frame so the layout read happens off the
-    // load critical path and does not trigger a forced synchronous reflow.
-    window.addEventListener('load', () => {
-        requestAnimationFrame(() => {
-            if (window.testimonialSwiper) window.testimonialSwiper.update();
+            autoplay: {
+                delay: 5000,
+                disableOnInteraction: false,
+                pauseOnMouseEnter: true,
+            },
+            effect: 'slide',
+            speed: 600,
+            watchSlidesProgress: true,
+            resizeObserver: true,
         });
-    });
+    }
+
+    const testimonialContainer = document.querySelector('.testimonial-cards-wrapper');
+    if (testimonialContainer) {
+        if ('IntersectionObserver' in window) {
+            const swiperObserver = new IntersectionObserver((entries, obs) => {
+                if (entries.some(entry => entry.isIntersecting)) {
+                    // Build it in an animation frame so the layout read happens
+                    // off the main render path.
+                    requestAnimationFrame(initTestimonialSwiper);
+                    obs.disconnect();
+                }
+            }, { rootMargin: '200px' });
+            swiperObserver.observe(testimonialContainer);
+        } else {
+            initTestimonialSwiper();
+        }
+    }
 
     // ==========================================
     // MODAL FUNCTIONALITY

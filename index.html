@@ -1272,8 +1272,21 @@
     </script>
 
     <script defer src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    <script async type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
-    <script defer nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+    <!-- Ionicons: injected after the page has loaded so its module sub-chunks
+         stay off the initial critical request chain. -->
+    <script>
+        window.addEventListener('load', function () {
+            var esm = document.createElement('script');
+            esm.type = 'module';
+            esm.src = 'https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js';
+            document.body.appendChild(esm);
+
+            var legacy = document.createElement('script');
+            legacy.noModule = true;
+            legacy.src = 'https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js';
+            document.body.appendChild(legacy);
+        });
+    </script>
 
     <!-- Load main JavaScript file -->
     <script defer src="index.js"></script>
