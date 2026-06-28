@@ -17,9 +17,11 @@ database/tarix.db
 .DS_Store
 
 # Build artifacts
-*.min.js
-*.min.css
-*.min.html
+# NOTE: Do NOT ignore *.min.js / *.min.css here. The site loads required assets
+# from those paths (index.min.css, index.min.js, swiper-init.min.js and the
+# third-party vendor/*.min.* libraries). Ignoring them kept them out of the
+# deploy, so the server returned a JSON 404 and browsers refused them (wrong MIME).
+index.min.html
 
 # Temporary files
 *.tmp
