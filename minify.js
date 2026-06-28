@@ -32,50 +32,53 @@ function report(label, srcLen, outLen) {
 function buildCSS() {
     const cleaner = new CleanCSS({ level: 2, returnPromise: false });
     for (const { src, out } of cssFiles) {
-        const srcPath = path.join(root, src);
-        if (!fs.existsSync(srcPath)) {
-            console.warn(`⚠️  Skipping ${src} (not found)`);
-            continue;
+        try {
+            const srcPath = path.join(root, src);
+            if (!fs.existsSync(srcPath)) {
+                console.warn(`⚠️  Skipping ${src} (not found)`);
+                continue;
+            }
+            const css = fs.readFileSync(srcPath, 'utf8');
+            const result = cleaner.minify(css);
+            if (result.errors.length) {
+                throw new Error(result.errors.join(', '));
+            }
+            fs.writeFileSync(path.join(root, out), result.styles);
+            report(`${src} → ${out}`, css.length, result.styles.length);
+        } catch (err) {
+            console.error(`❌ CSS minify failed for ${src}:`, err.message);
         }
-        const css = fs.readFileSync(srcPath, 'utf8');
-        const result = cleaner.minify(css);
-        if (result.errors.length) {
-            throw new Error(`CSS minify failed for ${src}: ${result.errors.join(', ')}`);
-        }
-        fs.writeFileSync(path.join(root, out), result.styles);
-        report(`${src} → ${out}`, css.length, result.styles.length);
     }
 }
 
 async function buildJS() {
     for (const { src, out } of jsFiles) {
-        const srcPath = path.join(root, src);
-        if (!fs.existsSync(srcPath)) {
-            console.warn(`⚠️  Skipping ${src} (not found)`);
-            continue;
+        try {
+            const srcPath = path.join(root, src);
+            if (!fs.existsSync(srcPath)) {
+                console.warn(`⚠️  Skipping ${src} (not found)`);
+                continue;
+            }
+            const js = fs.readFileSync(srcPath, 'utf8');
+            const result = await minifyJS(js, {
+                compress: true,
+                mangle: true,
+                format: { comments: false },
+            });
+            if (result.error) {
+                throw result.error;
+            }
+            fs.writeFileSync(path.join(root, out), result.code);
+            report(`${src} → ${out}`, js.length, result.code.length);
+        } catch (err) {
+            console.error(`❌ JS minify failed for ${src}:`, err.message);
         }
-        const js = fs.readFileSync(srcPath, 'utf8');
-        const result = await minifyJS(js, {
-            compress: true,
-            mangle: true,
-            format: { comments: false },
-        });
-        if (result.error) {
-            throw result.error;
-        }
-        fs.writeFileSync(path.join(root, out), result.code);
-        report(`${src} → ${out}`, js.length, result.code.length);
     }
 }
 
 (async () => {
     console.log('🔨 Minifying assets...\n');
-    try {
-        buildCSS();
-        await buildJS();
-        console.log('🎉 Minification complete!');
-    } catch (err) {
-        console.error('❌ Minification error:', err.message);
-        process.exit(1);
-    }
+    await buildCSS();
+    await buildJS();
+    console.log('🎉 Minification complete!');
 })();
