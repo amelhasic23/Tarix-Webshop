@@ -4,13 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-MWXXWQJDV8"></script>
+    <!-- Google Analytics (the GTM script is injected after page load to keep its
+         ~150 KB off the initial critical path; events still queue via dataLayer) -->
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
         gtag('config', 'G-MWXXWQJDV8');
+        window.addEventListener('load', function () {
+            var ga = document.createElement('script');
+            ga.async = true;
+            ga.src = 'https://www.googletagmanager.com/gtag/js?id=G-MWXXWQJDV8';
+            document.head.appendChild(ga);
+        });
     </script>
 
     <!-- Preload critical CSS for faster rendering -->
@@ -19,18 +25,16 @@
 
     <!-- DNS Prefetch for external domains -->
     <link rel="dns-prefetch" href="https://unpkg.com">
-    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
     <link rel="dns-prefetch" href="https://fonts.googleapis.com">
     <link rel="dns-prefetch" href="https://fonts.gstatic.com">
     <link rel="dns-prefetch" href="https://www.googletagmanager.com">
 
     <!-- Preconnect for faster resource loading -->
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://unpkg.com" crossorigin>
 
-    <!-- Swiper CSS (carousel is below the fold — load without blocking render) -->
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"></noscript>
+    <!-- Swiper CSS is loaded on demand by swiper-init.js when the testimonials
+         carousel approaches the viewport (kept off the initial load). -->
+    <noscript><link rel="stylesheet" href="/vendor/swiper-bundle.min.css"></noscript>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1261,8 +1265,8 @@
     <!-- Sidebar Overlay for Mobile -->
     <div class="sidebar-overlay" data-sidebar-close></div>
 
-    <!-- EmailJS SDK (deferred — init runs after load) -->
-    <script defer type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <!-- EmailJS SDK (self-hosted for long-term caching; deferred — init runs after load) -->
+    <script defer type="text/javascript" src="/vendor/email.min.js"></script>
     <script>
         window.addEventListener('load', function() {
             if (typeof emailjs !== 'undefined') {
@@ -1271,7 +1275,8 @@
         });
     </script>
 
-    <script defer src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <!-- Swiper JS is loaded on demand by swiper-init.js when the testimonials
+         carousel approaches the viewport (kept off the initial load). -->
     <!-- Ionicons: injected after the page has loaded so its module sub-chunks
          stay off the initial critical request chain. -->
     <script>

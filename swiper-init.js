@@ -4,52 +4,82 @@ document.addEventListener('DOMContentLoaded', function() {
     // ==========================================
 
     // Initialize Testimonials Swiper.
-    // Creating a Swiper reads slide geometry (offsetWidth etc.), which forces a
-    // synchronous reflow. The testimonials carousel sits below the fold, so we
-    // defer initialization until it is about to enter the viewport — keeping the
-    // reflow off the initial load critical path. resizeObserver keeps it
-    // responsive afterwards (observer/observeParents removed to cut layout churn).
+    // Swiper's JS + CSS are only needed by this (below-the-fold) carousel, so we
+    // self-host them under /vendor and load them on demand when the carousel
+    // approaches the viewport — keeping ~150 KB of otherwise-unused JS/CSS off the
+    // initial load. Creating a Swiper also reads slide geometry (offsetWidth),
+    // which we run in an animation frame to avoid a forced synchronous reflow.
+    function loadSwiperAssets() {
+        return new Promise((resolve, reject) => {
+            if (window.Swiper) return resolve();
+
+            if (!document.querySelector('link[data-swiper-css]')) {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = '/vendor/swiper-bundle.min.css';
+                link.setAttribute('data-swiper-css', '');
+                document.head.appendChild(link);
+            }
+
+            const existing = document.querySelector('script[data-swiper-js]');
+            if (existing) {
+                existing.addEventListener('load', () => resolve());
+                existing.addEventListener('error', reject);
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = '/vendor/swiper-bundle.min.js';
+            script.setAttribute('data-swiper-js', '');
+            script.onload = () => resolve();
+            script.onerror = reject;
+            document.body.appendChild(script);
+        });
+    }
+
     function initTestimonialSwiper() {
         if (window.testimonialSwiper) return;
-        window.testimonialSwiper = new Swiper('.testimonial-cards-wrapper', {
-            loop: true,
-            slidesPerView: 1,
-            spaceBetween: 25,
-            centeredSlides: true,
-            autoHeight: false,
-            pagination: {
-                el: '.testimonial-cards-wrapper .swiper-pagination',
-                clickable: true,
-                dynamicBullets: true,
-            },
-            navigation: false,
-            breakpoints: {
-                640: {
-                    slidesPerView: 2,
-                    spaceBetween: 20,
-                    centeredSlides: false,
+        loadSwiperAssets().then(() => {
+            if (window.testimonialSwiper || typeof window.Swiper === 'undefined') return;
+            window.testimonialSwiper = new Swiper('.testimonial-cards-wrapper', {
+                loop: true,
+                slidesPerView: 1,
+                spaceBetween: 25,
+                centeredSlides: true,
+                autoHeight: false,
+                pagination: {
+                    el: '.testimonial-cards-wrapper .swiper-pagination',
+                    clickable: true,
+                    dynamicBullets: true,
                 },
-                1024: {
-                    slidesPerView: 3,
-                    spaceBetween: 25,
-                    centeredSlides: false,
+                navigation: false,
+                breakpoints: {
+                    640: {
+                        slidesPerView: 2,
+                        spaceBetween: 20,
+                        centeredSlides: false,
+                    },
+                    1024: {
+                        slidesPerView: 3,
+                        spaceBetween: 25,
+                        centeredSlides: false,
+                    },
+                    1400: {
+                        slidesPerView: 3,
+                        spaceBetween: 30,
+                        centeredSlides: false,
+                    }
                 },
-                1400: {
-                    slidesPerView: 3,
-                    spaceBetween: 30,
-                    centeredSlides: false,
-                }
-            },
-            autoplay: {
-                delay: 5000,
-                disableOnInteraction: false,
-                pauseOnMouseEnter: true,
-            },
-            effect: 'slide',
-            speed: 600,
-            watchSlidesProgress: true,
-            resizeObserver: true,
-        });
+                autoplay: {
+                    delay: 5000,
+                    disableOnInteraction: false,
+                    pauseOnMouseEnter: true,
+                },
+                effect: 'slide',
+                speed: 600,
+                watchSlidesProgress: true,
+                resizeObserver: true,
+            });
+        }).catch(() => { /* Swiper assets failed to load; carousel stays static */ });
     }
 
     const testimonialContainer = document.querySelector('.testimonial-cards-wrapper');
