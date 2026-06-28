@@ -7,6 +7,10 @@ echo "Starting build..."
 echo "Installing dependencies..."
 npm ci
 
+# Minify CSS/JS assets
+echo "Minifying assets..."
+npm run build
+
 # Initialize database
 echo "Seeding database..."
 npm run seed

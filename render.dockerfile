@@ -22,6 +22,9 @@ RUN npm ci --only=production --no-optional
 # Copy application code
 COPY . .
 
+# Minify CSS/JS assets
+RUN npm run build
+
 # Seed database
 RUN npm run seed
 

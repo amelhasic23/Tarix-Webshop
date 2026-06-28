@@ -1,92 +1,81 @@
+/**
+ * Build-time asset minifier.
+ *
+ * Uses production-grade libraries (terser for JS, clean-css for CSS) so the
+ * generated *.min.* files are safe to ship and noticeably smaller than the
+ * sources. Run with `npm run build` (also wired into the Render build step).
+ */
 const fs = require('fs');
+const path = require('path');
+const CleanCSS = require('clean-css');
+const { minify: minifyJS } = require('terser');
 
-// Simple CSS minifier
-function minifyCSS(css) {
-    return css
-        .replace(/\/\*[\s\S]*?\*\//g, '') // Remove comments
-        .replace(/\s*([{}:;,])\s*/g, '$1') // Remove spaces around special chars
-        .replace(/\s+/g, ' ') // Collapse whitespace
-        .replace(/;\}/g, '}') // Remove last semicolon
-        .trim();
+const root = __dirname;
+
+const cssFiles = [
+    { src: 'index.css', out: 'index.min.css' },
+];
+
+const jsFiles = [
+    { src: 'index.js', out: 'index.min.js' },
+    { src: 'swiper-init.js', out: 'swiper-init.min.js' },
+];
+
+function report(label, srcLen, outLen) {
+    const saved = srcLen === 0 ? 0 : ((srcLen - outLen) / srcLen) * 100;
+    console.log(`✅ ${label}`);
+    console.log(`   Original: ${(srcLen / 1024).toFixed(2)} KB`);
+    console.log(`   Minified: ${(outLen / 1024).toFixed(2)} KB`);
+    console.log(`   Saved:    ${saved.toFixed(1)}%\n`);
 }
 
-// Simple JS minifier (basic)
-function minifyJS(js) {
-    return js
-        .replace(/\/\*[\s\S]*?\*\//g, '') // Remove block comments
-        .replace(/\/\/.*/g, '') // Remove line comments
-        .replace(/\s*([{}():;,=+\-*/<>!&|])\s*/g, '$1') // Remove spaces around operators
-        .replace(/\s+/g, ' ') // Collapse whitespace
-        .replace(/;\s*}/g, '}') // Clean up before braces
-        .trim();
+function buildCSS() {
+    const cleaner = new CleanCSS({ level: 2, returnPromise: false });
+    for (const { src, out } of cssFiles) {
+        const srcPath = path.join(root, src);
+        if (!fs.existsSync(srcPath)) {
+            console.warn(`⚠️  Skipping ${src} (not found)`);
+            continue;
+        }
+        const css = fs.readFileSync(srcPath, 'utf8');
+        const result = cleaner.minify(css);
+        if (result.errors.length) {
+            throw new Error(`CSS minify failed for ${src}: ${result.errors.join(', ')}`);
+        }
+        fs.writeFileSync(path.join(root, out), result.styles);
+        report(`${src} → ${out}`, css.length, result.styles.length);
+    }
 }
 
-// Simple HTML minifier
-function minifyHTML(html) {
-    return html
-        .replace(/<!--[\s\S]*?-->/g, '') // Remove HTML comments
-        .replace(/>\s+</g, '><') // Remove whitespace between tags
-        .replace(/\s+/g, ' ') // Collapse whitespace
-        .trim();
+async function buildJS() {
+    for (const { src, out } of jsFiles) {
+        const srcPath = path.join(root, src);
+        if (!fs.existsSync(srcPath)) {
+            console.warn(`⚠️  Skipping ${src} (not found)`);
+            continue;
+        }
+        const js = fs.readFileSync(srcPath, 'utf8');
+        const result = await minifyJS(js, {
+            compress: true,
+            mangle: true,
+            format: { comments: false },
+        });
+        if (result.error) {
+            throw result.error;
+        }
+        fs.writeFileSync(path.join(root, out), result.code);
+        report(`${src} → ${out}`, js.length, result.code.length);
+    }
 }
 
-console.log('🔨 Minifying files...\n');
-
-// Minify CSS
-try {
-    const css = fs.readFileSync('index.css', 'utf8');
-    const minifiedCSS = minifyCSS(css);
-    fs.writeFileSync('index.min.css', minifiedCSS);
-    console.log(`✅ index.css minified`);
-    console.log(`   Original: ${(css.length / 1024).toFixed(2)} KB`);
-    console.log(`   Minified: ${(minifiedCSS.length / 1024).toFixed(2)} KB`);
-    console.log(`   Saved: ${(((css.length - minifiedCSS.length) / css.length) * 100).toFixed(1)}%\n`);
-} catch (e) {
-    console.error('❌ Error minifying CSS:', e.message);
-}
-
-// Minify JS
-try {
-    const js = fs.readFileSync('index.js', 'utf8');
-    const minifiedJS = minifyJS(js);
-    fs.writeFileSync('index.min.js', minifiedJS);
-    console.log(`✅ index.js minified`);
-    console.log(`   Original: ${(js.length / 1024).toFixed(2)} KB`);
-    console.log(`   Minified: ${(minifiedJS.length / 1024).toFixed(2)} KB`);
-    console.log(`   Saved: ${(((js.length - minifiedJS.length) / js.length) * 100).toFixed(1)}%\n`);
-} catch (e) {
-    console.error('❌ Error minifying JS:', e.message);
-}
-
-// Minify swiper-init.js
-try {
-    const swiperJS = fs.readFileSync('swiper-init.js', 'utf8');
-    const minifiedSwiperJS = minifyJS(swiperJS);
-    fs.writeFileSync('swiper-init.min.js', minifiedSwiperJS);
-    console.log(`✅ swiper-init.js minified`);
-    console.log(`   Original: ${(swiperJS.length / 1024).toFixed(2)} KB`);
-    console.log(`   Minified: ${(minifiedSwiperJS.length / 1024).toFixed(2)} KB`);
-    console.log(`   Saved: ${(((swiperJS.length - minifiedSwiperJS.length) / swiperJS.length) * 100).toFixed(1)}%\n`);
-} catch (e) {
-    console.error('❌ Error minifying swiper-init.js:', e.message);
-}
-
-// Minify HTML
-try {
-    const html = fs.readFileSync('index.html', 'utf8');
-    const minifiedHTML = minifyHTML(html);
-    fs.writeFileSync('index.min.html', minifiedHTML);
-    console.log(`✅ index.html minified`);
-    console.log(`   Original: ${(html.length / 1024).toFixed(2)} KB`);
-    console.log(`   Minified: ${(minifiedHTML.length / 1024).toFixed(2)} KB`);
-    console.log(`   Saved: ${(((html.length - minifiedHTML.length) / html.length) * 100).toFixed(1)}%\n`);
-} catch (e) {
-    console.error('❌ Error minifying HTML:', e.message);
-}
-
-console.log('🎉 Minification complete!');
-console.log('\n📁 Minified files created:');
-console.log('   - index.min.html');
-console.log('   - index.min.js');
-console.log('   - swiper-init.min.js');
-console.log('   - index.min.css');
+(async () => {
+    console.log('🔨 Minifying assets...\n');
+    try {
+        buildCSS();
+        await buildJS();
+        console.log('🎉 Minification complete!');
+    } catch (err) {
+        console.error('❌ Minification error:', err.message);
+        process.exit(1);
+    }
+})();
