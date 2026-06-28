@@ -17,7 +17,7 @@ router.get('/', isAuthenticated, async (req, res) => {
 });
 
 // Update CTA content
-router.put('/', isAuthenticated, upload.single('image'), async (req, res) => {
+router.put('/', isAuthenticated, upload.single('image'), upload.processImage, async (req, res) => {
     try {
         const { heading, subheading, text, button_text } = req.body;
 

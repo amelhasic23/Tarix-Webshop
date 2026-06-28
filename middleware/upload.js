@@ -1,6 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const sharp = require('sharp');
 
 // Ensure upload directories exist
 const ensureDirectoryExists = (dir) => {
@@ -63,4 +64,76 @@ const upload = multer({
     }
 });
 
+// Maximum dimension (px) per upload folder. Images larger than this are
+// resized down (aspect ratio preserved) to cut download size and improve LCP.
+const MAX_DIMENSION = {
+    'products': 800,
+    'banners': 1600,
+    'cta': 1200,
+    'testimonials': 500,
+    'icons': 256,
+    'uploads': 1200
+};
+
+const RASTER_EXT = ['.jpg', '.jpeg', '.png', '.webp'];
+
+const resolveMaxDimension = (filePath) => {
+    const normalized = filePath.replace(/\\/g, '/');
+    for (const folder in MAX_DIMENSION) {
+        if (normalized.includes(`/${folder}/`)) return MAX_DIMENSION[folder];
+    }
+    return 1200;
+};
+
+/**
+ * Express middleware (runs after multer) that, for the just-uploaded file:
+ *   1. Resizes + compresses the original in place.
+ *   2. Writes a modern WebP sibling next to it (same name, .webp extension).
+ * The DB still stores the original path; the front-end serves the WebP via
+ * <picture> with the original as fallback. Failures are non-fatal.
+ */
+const processImage = async (req, res, next) => {
+    if (!req.file || !req.file.path) return next();
+
+    const filePath = req.file.path;
+    const ext = path.extname(filePath).toLowerCase();
+
+    // Skip vector/animated formats (e.g. .svg, .gif) to avoid breaking them.
+    if (!RASTER_EXT.includes(ext)) return next();
+
+    try {
+        const maxDim = resolveMaxDimension(filePath);
+        const source = fs.readFileSync(filePath);
+        const resizeOpts = { width: maxDim, height: maxDim, fit: 'inside', withoutEnlargement: true };
+
+        // Re-encode the original (compressed) in place.
+        let pipeline = sharp(source, { failOn: 'none' }).rotate().resize(resizeOpts);
+        if (ext === '.png') {
+            pipeline = pipeline.png({ compressionLevel: 9, quality: 80, palette: true });
+        } else if (ext === '.webp') {
+            pipeline = pipeline.webp({ quality: 80 });
+        } else {
+            pipeline = pipeline.jpeg({ quality: 80, mozjpeg: true });
+        }
+        const optimized = await pipeline.toBuffer();
+        fs.writeFileSync(filePath, optimized);
+
+        // Write a WebP sibling (skip when the upload already is WebP).
+        if (ext !== '.webp') {
+            const webpPath = filePath.replace(/\.[^.]+$/, '.webp');
+            const webp = await sharp(source, { failOn: 'none' })
+                .rotate()
+                .resize(resizeOpts)
+                .webp({ quality: 78 })
+                .toBuffer();
+            fs.writeFileSync(webpPath, webp);
+        }
+    } catch (err) {
+        console.warn('Image optimization skipped (using original):', err.message);
+    }
+
+    next();
+};
+
 module.exports = upload;
+module.exports.processImage = processImage;

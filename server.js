@@ -94,8 +94,8 @@ app.use('/api', (req, res, next) => {
 
 // Serve static files
 app.use(express.static(path.join(__dirname)));
-app.use('/Images', express.static(path.join(__dirname, 'Images')));
-app.use('/assets', express.static(path.join(__dirname, 'assets')));
+app.use('/Images', express.static(path.join(__dirname, 'Images'), { maxAge: '7d' }));
+app.use('/assets', express.static(path.join(__dirname, 'assets'), { maxAge: '7d' }));
 app.use('/admin', express.static(path.join(__dirname, 'admin')));
 
 // Import routes

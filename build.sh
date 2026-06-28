@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Render Build Script - No native modules needed
+# Render Build Script
 echo "Starting build..."
 
 # Install dependencies

@@ -23,6 +23,15 @@ function sanitizeURL(url) {
     return '';
 }
 
+// Derive the WebP sibling path for an optimized image (same name, .webp ext).
+// Returns '' for data URLs or unknown extensions so callers can skip the <source>.
+function toWebp(url) {
+    const str = String(url || '');
+    if (!str || str.startsWith('data:')) return '';
+    if (!/\.(png|jpe?g)(\?.*)?$/i.test(str)) return '';
+    return str.replace(/\.(png|jpe?g)(\?.*)?$/i, '.webp$2');
+}
+
 // ========================================
 // PERFORMANCE UTILITIES
 // ========================================
@@ -2898,7 +2907,17 @@ async function loadCTAFromStorage() {
         const textEl = container.querySelector('.cta-text');
         const btnEl = container.querySelector('.cta-btn');
 
-        if (bannerImg && cta.image_path) bannerImg.src = sanitizeURL(cta.image_path);
+        if (bannerImg && cta.image_path) {
+            const ctaImage = sanitizeURL(cta.image_path);
+            bannerImg.src = ctaImage;
+            // Keep the <picture> WebP source in sync with the new image.
+            const webpSource = bannerImg.parentElement && bannerImg.parentElement.querySelector('source[type="image/webp"]');
+            const ctaWebp = toWebp(ctaImage);
+            if (webpSource) {
+                if (ctaWebp) webpSource.srcset = ctaWebp;
+                else webpSource.remove();
+            }
+        }
         if (discountEl && cta.subheading) discountEl.textContent = cta.subheading;
         if (titleEl && cta.heading) titleEl.textContent = cta.heading;
         if (textEl && cta.text) textEl.textContent = cta.text;
@@ -2938,7 +2957,8 @@ async function loadProductsFromStorage() {
             const categoryName = sanitizeHTML(product.category_name || 'Uncategorized');
             const categoryFilter = categoryName.toLowerCase().replace(/[^a-z0-9-]/g, '');
             const safeName = sanitizeHTML(product.name || '');
-            const safeImage = sanitizeURL(product.image_path || './assets/images/products/1.jpg');
+            const safeImage = sanitizeURL(product.image_path || './Images/products/1.jpg');
+            const webpImage = toWebp(safeImage);
             const price = parseFloat(product.price) || 0;
             const oldPrice = parseFloat(product.old_price) || 0;
             const discount = product.discount_percentage || 0;
@@ -2946,7 +2966,10 @@ async function loadProductsFromStorage() {
             return `
                 <div class="showcase" data-category="${categoryFilter}">
                     <div class="showcase-banner">
-                        <img src="${safeImage}" alt="${safeName}" width="300" class="product-img default" loading="lazy" decoding="async">
+                        <picture>
+                            ${webpImage ? `<source type="image/webp" srcset="${webpImage}">` : ''}
+                            <img src="${safeImage}" alt="${safeName}" width="300" class="product-img default" loading="lazy" decoding="async">
+                        </picture>
                         ${discount > 0 ? `<p class="showcase-badge">${discount}%</p>` : ''}
                         ${product.best_seller ? '<p class="showcase-badge angle pink">Best</p>' : ''}
                         <div class="showcase-actions">
@@ -3060,12 +3083,16 @@ async function loadBannersFromStorage() {
         swiperWrapper.innerHTML = banners.map((banner, index) => {
             const safeTitle = sanitizeHTML(banner.title || '');
             const safeSubtitle = sanitizeHTML(banner.subtitle || '');
-            const safeImage = sanitizeURL(banner.image_path || './assets/images/banner-1.jpg');
+            const safeImage = sanitizeURL(banner.image_path || './Images/banner-1.jpg');
+            const webpImage = toWebp(safeImage);
             const price = banner.price || '20';
 
             return `
                 <div class="swiper-slide slider-item">
-                    <img src="${safeImage}" alt="${safeTitle}" class="banner-img" ${index === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} decoding="async">
+                    <picture>
+                        ${webpImage ? `<source type="image/webp" srcset="${webpImage}">` : ''}
+                        <img src="${safeImage}" alt="${safeTitle}" class="banner-img" ${index === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"'} decoding="async">
+                    </picture>
                     <div class="banner-content">
                         <p class="banner-subtitle">${safeSubtitle}</p>
                         <h2 class="banner-title">${safeTitle}</h2>

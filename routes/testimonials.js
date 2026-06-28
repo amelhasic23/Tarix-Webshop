@@ -31,7 +31,7 @@ router.get('/:id', isAuthenticated, async (req, res) => {
 });
 
 // Create testimonial
-router.post('/', isAuthenticated, upload.single('image'), async (req, res) => {
+router.post('/', isAuthenticated, upload.single('image'), upload.processImage, async (req, res) => {
     try {
         const { customer_name, customer_role, text, rating, active, order_position } = req.body;
 
@@ -58,7 +58,7 @@ router.post('/', isAuthenticated, upload.single('image'), async (req, res) => {
 });
 
 // Update testimonial
-router.put('/:id', isAuthenticated, upload.single('image'), async (req, res) => {
+router.put('/:id', isAuthenticated, upload.single('image'), upload.processImage, async (req, res) => {
     try {
         const { customer_name, customer_role, text, rating, active, order_position } = req.body;
         const testimonialId = req.params.id;

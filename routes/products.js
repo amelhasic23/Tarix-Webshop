@@ -57,7 +57,7 @@ router.get('/:id', isAuthenticated, async (req, res) => {
 });
 
 // Create product
-router.post('/', isAuthenticated, upload.single('image'), async (req, res) => {
+router.post('/', isAuthenticated, upload.single('image'), upload.processImage, async (req, res) => {
     try {
         const { name, category_id, price, old_price, discount_percentage, description, stock, featured, best_seller, rating } = req.body;
 
@@ -90,7 +90,7 @@ router.post('/', isAuthenticated, upload.single('image'), async (req, res) => {
 });
 
 // Update product
-router.put('/:id', isAuthenticated, upload.single('image'), async (req, res) => {
+router.put('/:id', isAuthenticated, upload.single('image'), upload.processImage, async (req, res) => {
     try {
         const { name, category_id, price, old_price, discount_percentage, description, stock, featured, best_seller, rating } = req.body;
         const productId = req.params.id;

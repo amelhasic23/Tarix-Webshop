@@ -47,8 +47,14 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Force Swiper to recalculate slide widths after the full page
-    // layout is settled (fonts, images, CSS grid all resolved).
-    window.addEventListener('load', () => window.testimonialSwiper.update());
+    // layout is settled (fonts, images, CSS grid all resolved). Defer the
+    // update to the next animation frame so the layout read happens off the
+    // load critical path and does not trigger a forced synchronous reflow.
+    window.addEventListener('load', () => {
+        requestAnimationFrame(() => {
+            if (window.testimonialSwiper) window.testimonialSwiper.update();
+        });
+    });
 
     // ==========================================
     // MODAL FUNCTIONALITY

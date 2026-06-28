@@ -28,15 +28,17 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://unpkg.com" crossorigin>
 
-    <!-- Preload Swiper CSS for carousel -->
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" as="style">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+    <!-- Swiper CSS (carousel is below the fold — load without blocking render) -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"></noscript>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Google Fonts (load without blocking render) -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"></noscript>
 
-    <link rel="preload" href="./assets/images/banner-1.jpg" as="image" fetchpriority="high">
+    <link rel="preload" href="./Images/banner-1.jpg" as="image" fetchpriority="high">
     <title>Tarix - Premium Fashion, Electronics & Jewelry | Shop Online</title>
     <meta name="description" content="Discover Tarix — your trusted online destination for premium fashion, electronics, jewelry, and perfumes. Worldwide delivery, secure payment, and 30-day returns. Shop the latest trends today!">
     <meta name="keywords" content="fashion, electronics, jewelry, perfume, online shopping, premium brands, worldwide delivery, tarix, designer clothes, luxury watches, cosmetics">
@@ -65,7 +67,10 @@
             </button>
 
             <div class="newsletter-img">
-                <img src="./assets/images/newsletter.png" alt="subscribe newsletter" width="400" height="400" loading="lazy" decoding="async">
+                <picture>
+                    <source type="image/webp" srcset="./Images/newsletter.webp">
+                    <img src="./Images/newsletter.png" alt="subscribe newsletter" width="400" height="400" loading="lazy" decoding="async">
+                </picture>
             </div>
 
             <div class="newsletter">
@@ -134,7 +139,10 @@
     <div class="header-main">
       <div class="container">
         <a href="#home" class="header-logo">
-          <img src="./Images/WhatsApp%20Image%202026-03-27%20at%2014.20.47%20%281%29.jpeg" alt="Tarix logo" width="400" height="120" loading="eager" decoding="async" fetchpriority="high">
+          <picture>
+            <source type="image/webp" srcset="./Images/WhatsApp%20Image%202026-03-27%20at%2014.20.47%20%281%29.webp">
+            <img src="./Images/WhatsApp%20Image%202026-03-27%20at%2014.20.47%20%281%29.jpeg" alt="Tarix logo" width="400" height="120" loading="eager" decoding="async" fetchpriority="high">
+          </picture>
         </a>
 
         <div class="header-search-container">
@@ -936,7 +944,10 @@
 
                     <!-- CTA -->
                     <div class="cta-container">
-                        <img src="./assets/images/cta-banner.jpg" alt="special offers" class="cta-banner" loading="lazy" width="1000" height="400">
+                        <picture>
+                            <source type="image/webp" srcset="./Images/cta-banner.webp">
+                            <img src="./Images/cta-banner.jpg" alt="special offers" class="cta-banner" loading="lazy" width="1000" height="400">
+                        </picture>
                         <a href="#new-products" class="cta-content">
                             <p class="discount" data-translate="discountOffer">25% Discount</p>
                             <h2 class="cta-title" data-translate="specialOffers">Special Offers</h2>

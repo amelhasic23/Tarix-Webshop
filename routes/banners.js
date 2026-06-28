@@ -32,7 +32,7 @@ router.get('/:id', isAuthenticated, async (req, res) => {
 });
 
 // Create new banner
-router.post('/', isAuthenticated, upload.single('image'), async (req, res) => {
+router.post('/', isAuthenticated, upload.single('image'), upload.processImage, async (req, res) => {
     try {
         const { subtitle, title, text, price, active, order_position } = req.body;
 
@@ -60,7 +60,7 @@ router.post('/', isAuthenticated, upload.single('image'), async (req, res) => {
 });
 
 // Update banner
-router.put('/:id', isAuthenticated, upload.single('image'), async (req, res) => {
+router.put('/:id', isAuthenticated, upload.single('image'), upload.processImage, async (req, res) => {
     try {
         const { subtitle, title, text, price, active, order_position } = req.body;
         const bannerId = req.params.id;

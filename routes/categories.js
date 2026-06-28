@@ -46,7 +46,7 @@ router.get('/:id', isAuthenticated, async (req, res) => {
 });
 
 // Create category
-router.post('/', isAuthenticated, upload.single('icon'), async (req, res) => {
+router.post('/', isAuthenticated, upload.single('icon'), upload.processImage, async (req, res) => {
     try {
         const { name, parent_id, order_position } = req.body;
 
@@ -77,7 +77,7 @@ router.post('/', isAuthenticated, upload.single('icon'), async (req, res) => {
 });
 
 // Update category
-router.put('/:id', isAuthenticated, upload.single('icon'), async (req, res) => {
+router.put('/:id', isAuthenticated, upload.single('icon'), upload.processImage, async (req, res) => {
     try {
         const { name, parent_id, order_position } = req.body;
         const categoryId = req.params.id;
