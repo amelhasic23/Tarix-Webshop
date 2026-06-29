@@ -92,8 +92,15 @@ app.use('/api', (req, res, next) => {
     next();
 });
 
-// Serve static files
-app.use(express.static(path.join(__dirname)));
+// Serve static files (HTML revalidated; versioned CSS/JS cached long)
+app.use(express.static(path.join(__dirname), {
+    maxAge: '30d',
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache');
+        }
+    }
+}));
 app.use('/Images', express.static(path.join(__dirname, 'Images'), { maxAge: '30d', immutable: true }));
 app.use('/assets', express.static(path.join(__dirname, 'assets'), { maxAge: '30d', immutable: true }));
 app.use('/vendor', express.static(path.join(__dirname, 'vendor'), { maxAge: '1y', immutable: true }));
