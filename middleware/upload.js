@@ -76,6 +76,8 @@ const MAX_DIMENSION = {
 };
 
 const RASTER_EXT = ['.jpg', '.jpeg', '.png', '.webp'];
+const PRODUCT_WIDTHS = [320, 480, 640];
+const RESPONSIVE_VARIANT_RE = /-\d+w\.(?:jpe?g|png|webp)$/i;
 
 const resolveMaxDimension = (filePath) => {
     const normalized = filePath.replace(/\\/g, '/');
@@ -83,6 +85,42 @@ const resolveMaxDimension = (filePath) => {
         if (normalized.includes(`/${folder}/`)) return MAX_DIMENSION[folder];
     }
     return 1200;
+};
+
+const isProductImage = (filePath) => filePath.replace(/\\/g, '/').includes('/products/');
+const isResponsiveVariant = (filePath) => RESPONSIVE_VARIANT_RE.test(path.basename(filePath));
+
+const createProductVariants = async (source, filePath, ext) => {
+    if (!isProductImage(filePath) || isResponsiveVariant(filePath)) return;
+
+    const basePath = filePath.replace(/\.[^.]+$/, '');
+
+    for (const width of PRODUCT_WIDTHS) {
+        const resizeOpts = { width, height: width, fit: 'inside', withoutEnlargement: true };
+        const fallbackPath = `${basePath}-${width}w${ext}`;
+        let fallbackPipeline = sharp(source, { failOn: 'none' }).rotate().resize(resizeOpts);
+
+        if (ext === '.png') {
+            fallbackPipeline = fallbackPipeline.png({ compressionLevel: 9, quality: 80, palette: true });
+        } else if (ext === '.webp') {
+            fallbackPipeline = fallbackPipeline.webp({ quality: 80 });
+        } else {
+            fallbackPipeline = fallbackPipeline.jpeg({ quality: 80, mozjpeg: true });
+        }
+
+        const fallback = await fallbackPipeline.toBuffer();
+        fs.writeFileSync(fallbackPath, fallback);
+
+        if (ext !== '.webp') {
+            const webpPath = `${basePath}-${width}w.webp`;
+            const webp = await sharp(source, { failOn: 'none' })
+                .rotate()
+                .resize(resizeOpts)
+                .webp({ quality: 78 })
+                .toBuffer();
+            fs.writeFileSync(webpPath, webp);
+        }
+    }
 };
 
 /**
@@ -100,6 +138,7 @@ const processImage = async (req, res, next) => {
 
     // Skip vector/animated formats (e.g. .svg, .gif) to avoid breaking them.
     if (!RASTER_EXT.includes(ext)) return next();
+    if (isResponsiveVariant(filePath)) return next();
 
     try {
         const maxDim = resolveMaxDimension(filePath);
@@ -128,6 +167,8 @@ const processImage = async (req, res, next) => {
                 .toBuffer();
             fs.writeFileSync(webpPath, webp);
         }
+
+        await createProductVariants(source, filePath, ext);
     } catch (err) {
         console.warn('Image optimization skipped (using original):', err.message);
     }

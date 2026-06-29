@@ -32,6 +32,25 @@ function toWebp(url) {
     return str.replace(/\.(png|jpe?g)(\?.*)?$/i, '.webp$2');
 }
 
+const PRODUCT_IMAGE_WIDTHS = [320, 480, 640];
+const PRODUCT_IMAGE_SIZES = '(max-width: 480px) 92vw, (max-width: 768px) 45vw, (max-width: 1200px) 30vw, 300px';
+
+function toProductSrcset(url, outputExt) {
+    const str = String(url || '');
+    if (!str || str.startsWith('data:')) return '';
+    const match = str.match(/^(.*)\.(png|jpe?g)(\?.*)?$/i);
+    if (!match) return '';
+
+    const base = match[1];
+    const ext = outputExt || match[2].toLowerCase();
+    const query = match[3] || '';
+    return PRODUCT_IMAGE_WIDTHS.map((width) => `${base}-${width}w.${ext}${query} ${width}w`).join(', ');
+}
+
+function productImagePriorityAttrs(index) {
+    return index === 0 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"';
+}
+
 // ========================================
 // PERFORMANCE UTILITIES
 // ========================================
@@ -2953,12 +2972,13 @@ async function loadProductsFromStorage() {
         }
 
         // Generate product HTML from API data
-        productGrid.innerHTML = products.map(product => {
+        productGrid.innerHTML = products.map((product, index) => {
             const categoryName = sanitizeHTML(product.category_name || 'Uncategorized');
             const categoryFilter = categoryName.toLowerCase().replace(/[^a-z0-9-]/g, '');
             const safeName = sanitizeHTML(product.name || '');
             const safeImage = sanitizeURL(product.image_path || './Images/products/1.jpg');
-            const webpImage = toWebp(safeImage);
+            const fallbackSrcset = toProductSrcset(safeImage);
+            const srcsetAttrs = fallbackSrcset ? `srcset="${fallbackSrcset}" sizes="${PRODUCT_IMAGE_SIZES}"` : '';
             const price = parseFloat(product.price) || 0;
             const oldPrice = parseFloat(product.old_price) || 0;
             const discount = product.discount_percentage || 0;
@@ -2967,8 +2987,7 @@ async function loadProductsFromStorage() {
                 <div class="showcase" data-category="${categoryFilter}">
                     <div class="showcase-banner">
                         <picture>
-                            ${webpImage ? `<source type="image/webp" srcset="${webpImage}">` : ''}
-                            <img src="${safeImage}" alt="${safeName}" width="300" class="product-img default" loading="lazy" decoding="async">
+                            <img src="${safeImage}" ${srcsetAttrs} alt="${safeName}" width="300" height="300" class="product-img default" ${productImagePriorityAttrs(index)} decoding="async">
                         </picture>
                         ${discount > 0 ? `<p class="showcase-badge">${discount}%</p>` : ''}
                         ${product.best_seller ? '<p class="showcase-badge angle pink">Best</p>' : ''}

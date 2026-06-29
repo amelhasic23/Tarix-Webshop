@@ -31,9 +31,13 @@ const DEFAULT_MAX = 1200;
 const ROOT_MAX = 1200;
 
 const RASTER_EXT = ['.jpg', '.jpeg', '.png'];
+const PRODUCT_WIDTHS = [320, 480, 640];
+const RESPONSIVE_VARIANT_RE = /-\d+w\.(?:jpe?g|png|webp)$/i;
 
 // Logo files are displayed very small; cap them tightly.
 const isLogo = (file) => /whatsapp image|logo/i.test(file);
+const isProductImage = (filePath) => filePath.replace(/\\/g, '/').includes('/products/');
+const isResponsiveVariant = (fileName) => RESPONSIVE_VARIANT_RE.test(fileName);
 
 const resolveMaxDimension = (filePath, fileName) => {
     if (isLogo(fileName)) return 400;
@@ -48,6 +52,40 @@ const resolveMaxDimension = (filePath, fileName) => {
 
 const formatKb = (bytes) => (bytes / 1024).toFixed(1) + ' KiB';
 
+async function createProductVariants(source, filePath, ext) {
+    if (!isProductImage(filePath)) return [];
+
+    const basePath = filePath.replace(/\.[^.]+$/, '');
+    const created = [];
+
+    for (const width of PRODUCT_WIDTHS) {
+        const resizeOpts = { width, height: width, fit: 'inside', withoutEnlargement: true };
+        const fallbackPath = `${basePath}-${width}w${ext}`;
+        let fallbackPipeline = sharp(source, { failOn: 'none' }).rotate().resize(resizeOpts);
+
+        if (ext === '.png') {
+            fallbackPipeline = fallbackPipeline.png({ compressionLevel: 9, quality: 80, palette: true });
+        } else {
+            fallbackPipeline = fallbackPipeline.jpeg({ quality: 80, mozjpeg: true });
+        }
+
+        const fallback = await fallbackPipeline.toBuffer();
+        fs.writeFileSync(fallbackPath, fallback);
+        created.push({ path: fallbackPath, size: fallback.length });
+
+        const webpPath = `${basePath}-${width}w.webp`;
+        const webp = await sharp(source, { failOn: 'none' })
+            .rotate()
+            .resize(resizeOpts)
+            .webp({ quality: 78 })
+            .toBuffer();
+        fs.writeFileSync(webpPath, webp);
+        created.push({ path: webpPath, size: webp.length });
+    }
+
+    return created;
+}
+
 let totalBefore = 0;
 let totalAfter = 0;
 let processed = 0;
@@ -56,6 +94,11 @@ let skipped = 0;
 async function optimizeFile(filePath) {
     const ext = path.extname(filePath).toLowerCase();
     const fileName = path.basename(filePath);
+
+    if (isResponsiveVariant(fileName)) {
+        skipped++;
+        return;
+    }
 
     if (!RASTER_EXT.includes(ext)) {
         skipped++;
@@ -95,13 +138,16 @@ async function optimizeFile(filePath) {
             .toBuffer();
         fs.writeFileSync(webpPath, webp);
 
+        const variants = await createProductVariants(source, filePath, ext);
+
         const afterSize = Math.min(optimized.length, beforeSize);
         totalBefore += beforeSize;
         totalAfter += afterSize;
         processed++;
 
         const rel = path.relative(path.join(__dirname, '..'), filePath);
-        console.log(`  ${rel}: ${formatKb(beforeSize)} -> ${formatKb(afterSize)} (+ webp ${formatKb(webp.length)})`);
+        const variantText = variants.length ? `, + ${variants.length} responsive variants` : '';
+        console.log(`  ${rel}: ${formatKb(beforeSize)} -> ${formatKb(afterSize)} (+ webp ${formatKb(webp.length)}${variantText})`);
     } catch (err) {
         console.warn(`  ! Skipped ${fileName}: ${err.message}`);
         skipped++;
