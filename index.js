@@ -517,6 +517,16 @@ const translations = {
         filterBy: "Filter by:",
         sortBy2: "Sort by:",
         allCategories: "All Categories",
+        catDressFrock: "Dress & Frock",
+        catWinterWear: "Winter Wear",
+        catGlassesLens: "Glasses & Lens",
+        catShortsJeans: "Shorts & Jeans",
+        catTShirts: "T-Shirts",
+        catHatCaps: "Hat & Caps",
+        catJackets: "Jackets",
+        catWatches: "Watches",
+        catShoes: "Shoes",
+        catJewelry: "Jewelry",
         catElectronics: "Electronics",
         catPlumbing: "Plumbing",
         catGarden: "Garden",
@@ -863,6 +873,16 @@ const translations = {
         filterBy: "Filtern nach:",
         sortBy2: "Sortieren nach:",
         allCategories: "Alle Kategorien",
+        catDressFrock: "Kleider & Röcke",
+        catWinterWear: "Winterkleidung",
+        catGlassesLens: "Brillen & Linsen",
+        catShortsJeans: "Shorts & Jeans",
+        catTShirts: "T-Shirts",
+        catHatCaps: "Hüte & Mützen",
+        catJackets: "Jacken",
+        catWatches: "Uhren",
+        catShoes: "Schuhe",
+        catJewelry: "Schmuck",
         catElectronics: "Elektronik",
         catPlumbing: "Sanitär",
         catGarden: "Garten",
@@ -1209,6 +1229,16 @@ const translations = {
         filterBy: "Filtriraj po:",
         sortBy2: "Sortiraj po:",
         allCategories: "Sve kategorije",
+        catDressFrock: "Haljine i kostimi",
+        catWinterWear: "Zimska odjeća",
+        catGlassesLens: "Naočale i leće",
+        catShortsJeans: "Šorc i farmerke",
+        catTShirts: "Majice",
+        catHatCaps: "Šeširi i kape",
+        catJackets: "Jakne",
+        catWatches: "Satovi",
+        catShoes: "Cipele",
+        catJewelry: "Nakit",
         catElectronics: "Elektronika",
         catPlumbing: "Vodovod",
         catGarden: "Vrt",
@@ -2685,6 +2715,33 @@ function renderUserDropdown() {
 // DYNAMIC CONTENT LOADING FROM LOCALSTORAGE
 // ========================================
 
+// Map free-form DB category names to translation keys (display-only i18n).
+// Filtering still uses slug-based data-category, so translating labels is safe.
+const CATEGORY_NAME_KEY_MAP = {
+    dressfrock: 'catDressFrock',
+    winterwear: 'catWinterWear',
+    glasseslens: 'catGlassesLens',
+    shortsjeans: 'catShortsJeans',
+    tshirts: 'catTShirts',
+    hatcaps: 'catHatCaps',
+    jackets: 'catJackets',
+    watches: 'catWatches',
+    shoes: 'catShoes',
+    jewelry: 'catJewelry'
+};
+
+function categoryTranslationKey(name) {
+    const norm = (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    return CATEGORY_NAME_KEY_MAP[norm] || null;
+}
+
+function translateCategoryName(name) {
+    const key = categoryTranslationKey(name);
+    if (!key) return name;
+    const data = translations[currentLanguage] || translations.en;
+    return data[key] || name;
+}
+
 function getCategoryIcon(name) {
     const slug = (name || '').toLowerCase();
     const iconMap = [
@@ -2731,6 +2788,8 @@ function applyCategoriesToDOM(categories) {
             const safeIcon = sanitizeURL(cat.icon_path || './assets/images/icons/dress.svg');
             const safeCount = sanitizeHTML(cat.product_count || 0);
             const filterAttr = (cat.name || '').toLowerCase().replace(/[^a-z0-9-]/g, '-');
+            const tKey = categoryTranslationKey(cat.name);
+            const dispName = sanitizeHTML(translateCategoryName(cat.name));
             return `
             <div class="category-item" data-filter-category="${filterAttr}">
                 <div class="category-img-box">
@@ -2738,7 +2797,7 @@ function applyCategoriesToDOM(categories) {
                 </div>
                 <div class="category-content-box">
                     <div class="category-content-flex">
-                        <h3 class="category-item-title">${safeName}</h3>
+                        <h3 class="category-item-title"${tKey ? ` data-translate="${tKey}"` : ''}>${dispName}</h3>
                         <p class="category-item-amount">(${safeCount})</p>
                     </div>
                     <a href="#new-products" class="category-btn" data-translate="showAll">Show all</a>
@@ -2771,11 +2830,13 @@ function applyCategoriesToDOM(categories) {
             const slug = (cat.name || '').toLowerCase().replace(/[^a-z0-9-]/g, '-');
             const icon = getCategoryIcon(cat.name);
             const safeName = sanitizeHTML(cat.name || '');
+            const tKey = categoryTranslationKey(cat.name);
+            const dispName = sanitizeHTML(translateCategoryName(cat.name));
             return `
             <li class="category-item">
                 <button class="category-toggle" data-category="${slug}" aria-expanded="false">
                     <ion-icon name="${icon}"></ion-icon>
-                    <span>${safeName}</span>
+                    <span${tKey ? ` data-translate="${tKey}"` : ''}>${dispName}</span>
                 </button>
             </li>`;
         }).join('');
@@ -2807,7 +2868,9 @@ function applyCategoriesToDOM(categories) {
             const filterAttr = (cat.name || '').toLowerCase().replace(/[^a-z0-9-]/g, '-');
             const opt = document.createElement('option');
             opt.value = filterAttr;
-            opt.textContent = sanitizeHTML(cat.name || '');
+            const tKey = categoryTranslationKey(cat.name);
+            if (tKey) opt.setAttribute('data-translate', tKey);
+            opt.textContent = sanitizeHTML(translateCategoryName(cat.name));
             categoryFilter.appendChild(opt);
         });
     }
@@ -2975,6 +3038,8 @@ async function loadProductsFromStorage() {
         productGrid.innerHTML = products.map((product, index) => {
             const categoryName = sanitizeHTML(product.category_name || 'Uncategorized');
             const categoryFilter = categoryName.toLowerCase().replace(/[^a-z0-9-]/g, '');
+            const categoryKey = categoryTranslationKey(product.category_name);
+            const categoryLabel = sanitizeHTML(translateCategoryName(product.category_name || 'Uncategorized'));
             const safeName = sanitizeHTML(product.name || '');
             const safeImage = sanitizeURL(product.image_path || './Images/products/1.jpg');
             const fallbackSrcset = toProductSrcset(safeImage);
@@ -3009,7 +3074,7 @@ async function loadProductsFromStorage() {
                         </div>
                     </div>
                     <div class="showcase-content">
-                        <a href="#" class="showcase-category">${categoryName}</a>
+                        <a href="#" class="showcase-category"${categoryKey ? ` data-translate="${categoryKey}"` : ''}>${categoryLabel}</a>
                         <a href="#">
                             <h3 class="showcase-title">${safeName}</h3>
                         </a>
@@ -3589,6 +3654,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Load products and wait — product grid must be populated before allProducts is queried
     await loadProductsFromStorage();
     loadBestSellersFromStorage();
+
+    // Re-apply translations now that categories/products are injected dynamically
+    translatePage(currentLanguage);
+
+    // Core content is ready — reveal the page (hide preloader)
+    document.body.classList.add('loaded');
 
     // ========================================
     // LOAD PRODUCTS FROM API

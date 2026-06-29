@@ -28,8 +28,8 @@
     </script>
 
     <!-- Preload critical CSS for faster rendering -->
-    <link rel="preload" href="index.min.css?v=20260629" as="style">
-    <link rel="stylesheet" href="index.min.css?v=20260629">
+    <link rel="preload" href="index.min.css?v=20260629b" as="style">
+    <link rel="stylesheet" href="index.min.css?v=20260629b">
 
     <!-- DNS Prefetch for external domains -->
     <link rel="dns-prefetch" href="https://unpkg.com">
@@ -51,13 +51,13 @@
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"></noscript>
 
     <link rel="preload" href="./Images/banner-1.jpg" as="image" fetchpriority="high">
-    <title>Tarix - Premium Fashion, Electronics & Jewelry | Shop Online</title>
+    <title>Tarix — Shop Fashion, Electronics, Jewelry & Perfumes</title>
     <meta name="description" content="Discover Tarix — your trusted online destination for premium fashion, electronics, jewelry, and perfumes. Worldwide delivery, secure payment, and 30-day returns. Shop the latest trends today!">
     <meta name="keywords" content="fashion, electronics, jewelry, perfume, online shopping, premium brands, worldwide delivery, tarix, designer clothes, luxury watches, cosmetics">
     <meta name="author" content="Tarix">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://tarix-webshop-eorv.onrender.com/">
-    <meta property="og:title" content="Tarix — Fashion & Electronics Store">
+    <meta property="og:title" content="Tarix — Shop Fashion, Electronics, Jewelry & Perfumes">
     <meta property="og:description" content="Shop premium fashion, electronics, jewelry and perfumes. Curated collections with worldwide shipping.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://tarix-webshop-eorv.onrender.com/">
@@ -67,6 +67,21 @@
     <link rel="shortcut icon" href="./Images/logo/favicon.ico" type="image/x-icon">
 </head>
 <body>
+
+    <!-- Page preloader -->
+    <div id="preloader" role="status" aria-label="Loading">
+        <div class="preloader-box">
+            <img src="./Images/logo/logo.svg" alt="Tarix" class="preloader-logo" width="110" height="110">
+            <span class="preloader-ring"></span>
+        </div>
+    </div>
+    <script>
+        (function () {
+            function hidePreloader() { document.body.classList.add('loaded'); }
+            window.addEventListener('load', hidePreloader);
+            window.setTimeout(hidePreloader, 6000);
+        })();
+    </script>
 
     <div class="overlay hidden" data-overlay></div>
 
@@ -1346,10 +1361,10 @@
     </script>
 
     <!-- Load main JavaScript file -->
-    <script defer src="index.min.js?v=20260629"></script>
+    <script defer src="index.min.js?v=20260629b"></script>
 
     <!-- External UI initialization script (deferred for better performance) -->
-    <script defer src="swiper-init.min.js?v=20260629"></script>
+    <script defer src="swiper-init.min.js?v=20260629b"></script>
 
     <!-- Back to Top Button -->
     <button id="backToTopBtn" class="back-to-top-btn" aria-label="Back to top" data-translate-aria-label="backToTop">
