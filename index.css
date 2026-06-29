@@ -4300,7 +4300,7 @@ footer::before {
 }
 
 .copyright {
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--white);
   font-size: var(--fs-8);
   font-weight: var(--weight-500);
   text-transform: capitalize;
@@ -4309,7 +4309,7 @@ footer::before {
 
 .copyright a {
   display: inline;
-  color: hsl(24, 100%, 72%);
+  color: hsl(24, 100%, 75%);
   font-weight: var(--weight-600);
   transition: color 0.3s ease;
 }
