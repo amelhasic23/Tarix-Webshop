@@ -2978,6 +2978,7 @@ async function loadProductsFromStorage() {
             const safeName = sanitizeHTML(product.name || '');
             const safeImage = sanitizeURL(product.image_path || './Images/products/1.jpg');
             const fallbackSrcset = toProductSrcset(safeImage);
+            const webpSrcset = toProductSrcset(safeImage, 'webp');
             const srcsetAttrs = fallbackSrcset ? `srcset="${fallbackSrcset}" sizes="${PRODUCT_IMAGE_SIZES}"` : '';
             const price = parseFloat(product.price) || 0;
             const oldPrice = parseFloat(product.old_price) || 0;
@@ -2987,6 +2988,7 @@ async function loadProductsFromStorage() {
                 <div class="showcase" data-category="${categoryFilter}">
                     <div class="showcase-banner">
                         <picture>
+                            ${webpSrcset ? `<source type="image/webp" srcset="${webpSrcset}" sizes="${PRODUCT_IMAGE_SIZES}">` : ''}
                             <img src="${safeImage}" ${srcsetAttrs} alt="${safeName}" width="300" height="300" class="product-img default" ${productImagePriorityAttrs(index)} decoding="async">
                         </picture>
                         ${discount > 0 ? `<p class="showcase-badge">${discount}%</p>` : ''}
