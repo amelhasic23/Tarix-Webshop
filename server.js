@@ -94,8 +94,8 @@ app.use('/api', (req, res, next) => {
 
 // Serve static files
 app.use(express.static(path.join(__dirname)));
-app.use('/Images', express.static(path.join(__dirname, 'Images'), { maxAge: '7d' }));
-app.use('/assets', express.static(path.join(__dirname, 'assets'), { maxAge: '7d' }));
+app.use('/Images', express.static(path.join(__dirname, 'Images'), { maxAge: '30d', immutable: true }));
+app.use('/assets', express.static(path.join(__dirname, 'assets'), { maxAge: '30d', immutable: true }));
 app.use('/vendor', express.static(path.join(__dirname, 'vendor'), { maxAge: '1y', immutable: true }));
 app.use('/admin', express.static(path.join(__dirname, 'admin')));
 
@@ -173,13 +173,14 @@ app.use((req, res, next) => {
         fs.existsSync(resolved) &&
         fs.statSync(resolved).isFile()
     ) {
+        res.set('Cache-Control', 'public, max-age=2592000, immutable');
         return res.sendFile(resolved);
     }
 
     // Otherwise fall back to a neutral placeholder so the request still 200s.
     if (fs.existsSync(placeholderImage)) {
         res.type('image/svg+xml');
-        res.set('Cache-Control', 'public, max-age=86400');
+        res.set('Cache-Control', 'public, max-age=2592000');
         return res.sendFile(placeholderImage);
     }
     return next();
