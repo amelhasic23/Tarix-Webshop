@@ -2994,6 +2994,10 @@ body.menu-open {
   justify-content: flex-start;
   gap: clamp(8px, 2vw, 12px);
   background: linear-gradient(180deg, var(--white) 0%, rgba(248, 248, 248, 0.5) 100%);
+  /* Reserve a stable height so cards don't grow/shrink with title length as
+     products load — keeps card (and grid) height constant to avoid layout
+     shift (CLS). */
+  min-height: 172px;
 }
 
 .product-grid .showcase-category {

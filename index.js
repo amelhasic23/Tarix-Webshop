@@ -3683,9 +3683,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Re-apply translations now that categories/products are injected dynamically
     translatePage(currentLanguage);
 
-    // Core content is ready — reveal the page (hide preloader)
-    document.body.classList.add('loaded');
-
     // ========================================
     // LOAD PRODUCTS FROM API
     // ========================================
@@ -3824,6 +3821,13 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Initial pagination
     updatePagination();
+
+    // Content is fully rendered AND trimmed to the first page — only now reveal
+    // the page so the first paint the user sees is the final layout. Revealing
+    // earlier showed every product and then shrank to one page, which is a large
+    // layout shift (CLS). The inline 6s fallback in index.html still hides the
+    // preloader if anything above this point throws.
+    document.body.classList.add('loaded');
 
     // ========================================
     // PRODUCT FILTERING & SORTING
