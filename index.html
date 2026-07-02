@@ -27,9 +27,25 @@
         });
     </script>
 
-    <!-- Preload critical CSS for faster rendering -->
-    <link rel="preload" href="index.min.css?v=f365dc63" as="style">
-    <link rel="stylesheet" href="index.min.css?v=f365dc63">
+    <!-- Critical CSS inlined so the first paint (incl. the preloader) needs no
+         network round-trip. The full stylesheet is fetched asynchronously below
+         so it never blocks render; the full-screen preloader hides any brief
+         unstyled flash until `body.loaded` is set on window load. -->
+    <style>
+        html,body{margin:0}
+        #preloader{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#fff 0%,#fff7f2 100%);transition:opacity .5s ease,visibility .5s ease}
+        .preloader-box{position:relative;display:flex;align-items:center;justify-content:center;width:130px;height:130px}
+        .preloader-logo{width:68px;height:68px;object-fit:contain;animation:preloaderPulse 1.6s ease-in-out infinite}
+        .preloader-ring{position:absolute;inset:0;border-radius:50%;border:4px solid hsla(14,100%,40%,.15);border-top-color:hsl(14,100%,40%);animation:preloaderSpin .9s linear infinite}
+        body.loaded #preloader{opacity:0;visibility:hidden;pointer-events:none}
+        @keyframes preloaderSpin{to{transform:rotate(360deg)}}
+        @keyframes preloaderPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.92);opacity:.85}}
+        @media (prefers-reduced-motion:reduce){.preloader-ring,.preloader-logo{animation:none}}
+    </style>
+
+    <!-- Full stylesheet: loaded without blocking render, then applied on load. -->
+    <link rel="preload" href="index.min.css?v=e4c8a5c8" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="index.min.css?v=e4c8a5c8"></noscript>
 
     <!-- DNS Prefetch for external domains -->
     <link rel="dns-prefetch" href="https://unpkg.com">
@@ -1332,15 +1348,8 @@
     <!-- Sidebar Overlay for Mobile -->
     <div class="sidebar-overlay" data-sidebar-close></div>
 
-    <!-- EmailJS SDK (self-hosted for long-term caching; deferred — init runs after load) -->
-    <script defer type="text/javascript" src="/vendor/email.min.js"></script>
-    <script>
-        window.addEventListener('load', function() {
-            if (typeof emailjs !== 'undefined') {
-                emailjs.init({ publicKey: "h75BWmKE_6AyV_UC9" });
-            }
-        });
-    </script>
+    <!-- EmailJS SDK is loaded on demand at checkout (see ensureEmailJS in
+         index.js) so its payload stays off every page's initial load. -->
 
     <!-- Swiper JS is loaded on demand by swiper-init.js when the testimonials
          carousel approaches the viewport (kept off the initial load). -->
@@ -1361,7 +1370,7 @@
     </script>
 
     <!-- Load main JavaScript file -->
-    <script defer src="index.min.js?v=f96d1b9e"></script>
+    <script defer src="index.min.js?v=0b7c8816"></script>
 
     <!-- External UI initialization script (deferred for better performance) -->
     <script defer src="swiper-init.min.js?v=54198763"></script>

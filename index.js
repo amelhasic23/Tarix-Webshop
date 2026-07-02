@@ -2114,11 +2114,36 @@ function validateCheckoutField(input) {
 }
 
 // Email sending function (using EmailJS)
+// Lazily loads + initialises the EmailJS SDK the first time an order email is
+// sent. EmailJS is only ever needed at checkout, so keeping it off every page's
+// initial load removes unused JavaScript from the critical path.
+let emailJsPromise = null;
+function ensureEmailJS() {
+    if (typeof emailjs !== 'undefined') return Promise.resolve();
+    if (emailJsPromise) return emailJsPromise;
+    emailJsPromise = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = '/vendor/email.min.js';
+        s.onload = () => {
+            try {
+                emailjs.init({ publicKey: 'h75BWmKE_6AyV_UC9' });
+                resolve();
+            } catch (e) {
+                reject(e);
+            }
+        };
+        s.onerror = () => reject(new Error('Failed to load EmailJS'));
+        document.head.appendChild(s);
+    });
+    return emailJsPromise;
+}
+
 async function sendOrderEmail(orderData) {
     try {
-        // Check if EmailJS is loaded
+        // Load EmailJS on demand, then confirm it is available.
+        await ensureEmailJS();
         if (typeof emailjs === 'undefined') {
-            console.error('EmailJS is not loaded. Please check the script tag in index.html');
+            console.error('EmailJS is not loaded.');
             return Promise.reject(new Error('EmailJS not loaded'));
         }
 

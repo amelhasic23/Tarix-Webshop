@@ -9,9 +9,29 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const CleanCSS = require('clean-css');
+const { PurgeCSS } = require('purgecss');
 const { minify: minifyJS } = require('terser');
 
 const root = __dirname;
+
+// Every file that references index.css classes — static markup plus the scripts
+// that build markup at runtime. PurgeCSS scans these; any class it cannot find
+// (and that isn't safelisted) is treated as unused and removed.
+const cssContent = [
+    'index.html', 'checkout.html', 'login.html',
+    'index.js', 'swiper-init.js', 'translations-extended.js',
+].map((f) => path.join(root, f)).filter((p) => fs.existsSync(p));
+
+// Classes toggled or injected dynamically that may not appear verbatim in the
+// scanned files. Kept unconditionally so interactive states keep their styling.
+const cssSafelist = {
+    standard: [
+        'active', 'closed', 'hidden', 'loading', 'error', 'loaded', 'visible',
+        'menu-open', 'sidebar-open', 'has-user', 'expanded', 'dropdown-open',
+        'highlight-product', 'field-error',
+    ],
+    greedy: [/-active$/, /-open$/, /-visible$/, /show$/],
+};
 
 // Minified files successfully (re)generated this run. Used to bust caches in
 // index.html so browsers/Lighthouse pick up changes despite immutable caching.
@@ -34,7 +54,7 @@ function report(label, srcLen, outLen) {
     console.log(`   Saved:    ${saved.toFixed(1)}%\n`);
 }
 
-function buildCSS() {
+async function buildCSS() {
     const cleaner = new CleanCSS({ level: 2, returnPromise: false });
     for (const { src, out } of cssFiles) {
         try {
@@ -44,7 +64,22 @@ function buildCSS() {
                 continue;
             }
             const css = fs.readFileSync(srcPath, 'utf8');
-            const result = cleaner.minify(css);
+
+            // Drop unused selectors first. Keyframes, @font-face and CSS custom
+            // properties are deliberately preserved (conservative) so styles
+            // referenced indirectly via animation/var() are never lost.
+            const purged = await new PurgeCSS().purge({
+                content: cssContent,
+                css: [{ raw: css }],
+                safelist: cssSafelist,
+                keyframes: false,
+                fontFace: false,
+                variables: false,
+                defaultExtractor: (c) => c.match(/[\w-/:]+(?<!:)/g) || [],
+            });
+            const cleanedSource = purged[0] ? purged[0].css : css;
+
+            const result = cleaner.minify(cleanedSource);
             if (result.errors.length) {
                 throw new Error(result.errors.join(', '));
             }
