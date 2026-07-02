@@ -7,10 +7,15 @@
  */
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const CleanCSS = require('clean-css');
 const { minify: minifyJS } = require('terser');
 
 const root = __dirname;
+
+// Minified files successfully (re)generated this run. Used to bust caches in
+// index.html so browsers/Lighthouse pick up changes despite immutable caching.
+const generated = [];
 
 const cssFiles = [
     { src: 'index.css', out: 'index.min.css' },
@@ -44,6 +49,7 @@ function buildCSS() {
                 throw new Error(result.errors.join(', '));
             }
             fs.writeFileSync(path.join(root, out), result.styles);
+            generated.push(out);
             report(`${src} → ${out}`, css.length, result.styles.length);
         } catch (err) {
             console.error(`❌ CSS minify failed for ${src}:`, err.message);
@@ -69,6 +75,7 @@ async function buildJS() {
                 throw result.error;
             }
             fs.writeFileSync(path.join(root, out), result.code);
+            generated.push(out);
             report(`${src} → ${out}`, js.length, result.code.length);
         } catch (err) {
             console.error(`❌ JS minify failed for ${src}:`, err.message);
@@ -76,9 +83,49 @@ async function buildJS() {
     }
 }
 
+function escapeRegExp(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Rewrites the `?v=` query string of each generated asset in index.html to a
+// short hash of the minified file's contents. Because the URL changes only when
+// the content changes, long-lived `immutable` caching stays safe while browsers
+// and Lighthouse always fetch the latest build.
+function bustCache() {
+    const htmlPath = path.join(root, 'index.html');
+    if (!fs.existsSync(htmlPath)) {
+        console.warn('⚠️  Skipping cache-bust (index.html not found)');
+        return;
+    }
+    let html = fs.readFileSync(htmlPath, 'utf8');
+    let updated = 0;
+    for (const out of generated) {
+        const filePath = path.join(root, out);
+        if (!fs.existsSync(filePath)) continue;
+        const hash = crypto
+            .createHash('md5')
+            .update(fs.readFileSync(filePath))
+            .digest('hex')
+            .slice(0, 8);
+        const pattern = new RegExp(`(${escapeRegExp(out)})\\?v=[^"'\\s>]*`, 'g');
+        html = html.replace(pattern, (match) => {
+            if (match.endsWith(`?v=${hash}`)) return match;
+            updated++;
+            return `${out}?v=${hash}`;
+        });
+    }
+    if (updated > 0) {
+        fs.writeFileSync(htmlPath, html);
+        console.log(`🔗 Cache-busted ${updated} asset reference(s) in index.html`);
+    } else {
+        console.log('🔗 Cache busters already up to date');
+    }
+}
+
 (async () => {
     console.log('🔨 Minifying assets...\n');
     await buildCSS();
     await buildJS();
+    bustCache();
     console.log('🎉 Minification complete!');
 })();
