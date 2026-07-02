@@ -92,18 +92,20 @@ app.use('/api', (req, res, next) => {
     next();
 });
 
-// Serve static files (HTML revalidated; versioned CSS/JS cached long)
+// Serve static files. HTML is always revalidated so deploys show immediately.
+// Every other asset (versioned CSS/JS via ?v=hash, hashed/unique image uploads,
+// vendor bundles) is safe to cache for a year immutable — this satisfies
+// Lighthouse's "efficient cache policy" audit without risking stale content.
 app.use(express.static(path.join(__dirname), {
-    maxAge: '30d',
+    maxAge: '1y',
     setHeaders: (res, filePath) => {
         if (filePath.endsWith('.html')) {
             res.setHeader('Cache-Control', 'no-cache');
+        } else {
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         }
     }
 }));
-app.use('/Images', express.static(path.join(__dirname, 'Images'), { maxAge: '30d', immutable: true }));
-app.use('/assets', express.static(path.join(__dirname, 'assets'), { maxAge: '30d', immutable: true }));
-app.use('/vendor', express.static(path.join(__dirname, 'vendor'), { maxAge: '1y', immutable: true }));
 app.use('/admin', express.static(path.join(__dirname, 'admin')));
 
 // Import routes
